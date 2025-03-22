@@ -64,6 +64,7 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
 
     private void handleNewGameRequest() {
         System.out.println("New Game requested");
+        ScreenManager.getInstance().activateScreen(GameState.GAME_SETUP);
     }
 
     private void handleLoadGameRequest() {
@@ -72,7 +73,6 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
 
     private void handleSettingsRequest() {
         System.out.println("Settings requested");
-        ScreenManager.getInstance().activateScreen(GameState.SETTINGS);
     }
 
     private void handleExitRequest() {
