@@ -1,5 +1,6 @@
 package com.colonygenesis.ui;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.map.PlanetType;
 import com.colonygenesis.ui.styling.AppTheme;
@@ -118,10 +119,20 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
     }
 
     private void startNewGame() {
-        System.out.println("Starting new game with colony: " + colonyNameField.getText() +
-                ", planet type: " + planetTypeComboBox.getValue());
+        String colonyName = colonyNameField.getText();
+        PlanetType planetType = planetTypeComboBox.getValue();
 
-        // TODO: Initialize game with selected parameters
+        System.out.println("Starting new game with colony: " + colonyName +
+                ", planet type: " + planetType);
+
+        Game game = new Game();
+        game.initialize(colonyName, planetType, 30);
+        game.start();
+
+        GameplayScreen gameplayScreen = new GameplayScreen(game);
+        ScreenManager.getInstance().registerScreen(GameState.GAMEPLAY, gameplayScreen);
+
+        ScreenManager.getInstance().activateScreen(GameState.GAMEPLAY);
     }
 
     @Override

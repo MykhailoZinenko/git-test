@@ -2,6 +2,7 @@ package com.colonygenesis.core;
 
 import com.colonygenesis.ui.GameSetupScreen;
 import com.colonygenesis.ui.MainMenuScreen;
+import com.colonygenesis.ui.LoadGameScreen;
 import com.colonygenesis.ui.ScreenManager;
 import com.colonygenesis.ui.styling.AppTheme;
 import javafx.application.Application;
@@ -38,6 +39,7 @@ public class ExoplanetColonyApp extends Application {
 
         screenManager.registerScreen(GameState.MAIN_MENU, new MainMenuScreen());
         screenManager.registerScreen(GameState.GAME_SETUP, new GameSetupScreen());
+        screenManager.registerScreen(GameState.LOAD_GAME, new LoadGameScreen());
 
         screenManager.activateScreen(GameState.MAIN_MENU);
 

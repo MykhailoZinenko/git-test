@@ -69,6 +69,7 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
 
     private void handleLoadGameRequest() {
         System.out.println("Load Game requested");
+        ScreenManager.getInstance().activateScreen(GameState.LOAD_GAME);
     }
 
     private void handleSettingsRequest() {
