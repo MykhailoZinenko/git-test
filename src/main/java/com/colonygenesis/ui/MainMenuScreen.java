@@ -1,13 +1,15 @@
 package com.colonygenesis.ui;
 
+import com.colonygenesis.core.GameState;
 import com.colonygenesis.ui.styling.AppTheme;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
-public class MainMenuScreen extends BorderPane {
+public class MainMenuScreen extends BorderPane implements IScreenController {
 
     public MainMenuScreen() {
         initializeUI();
@@ -23,10 +25,10 @@ public class MainMenuScreen extends BorderPane {
         Button exitBtn = createMenuButton("Exit");
         exitBtn.getStyleClass().add("danger-button");
 
-        newGameBtn.setOnAction(e -> System.out.println("New Game requested"));
-        loadGameBtn.setOnAction(e -> System.out.println("Load Game requested"));
-        settingsBtn.setOnAction(e -> System.out.println("Settings requested"));
-        exitBtn.setOnAction(e -> System.exit(0));
+        newGameBtn.setOnAction(e -> handleNewGameRequest());
+        loadGameBtn.setOnAction(e -> handleLoadGameRequest());
+        settingsBtn.setOnAction(e -> handleSettingsRequest());
+        exitBtn.setOnAction(e -> handleExitRequest());
 
         VBox menuBox = new VBox(20);
         menuBox.setAlignment(Pos.CENTER);
@@ -59,4 +61,38 @@ public class MainMenuScreen extends BorderPane {
         button.getStyleClass().add(AppTheme.STYLE_MENU_BUTTON);
         return button;
     }
+
+    private void handleNewGameRequest() {
+        System.out.println("New Game requested");
+    }
+
+    private void handleLoadGameRequest() {
+        System.out.println("Load Game requested");
+    }
+
+    private void handleSettingsRequest() {
+        System.out.println("Settings requested");
+        ScreenManager.getInstance().activateScreen(GameState.SETTINGS);
+    }
+
+    private void handleExitRequest() {
+        System.exit(0);
+    }
+
+    @Override
+    public Parent getRoot() {
+        return this;
+    }
+
+    @Override
+    public void initialize() {}
+
+    @Override
+    public void onShow() {}
+
+    @Override
+    public void onHide() {}
+
+    @Override
+    public void update() {}
 }

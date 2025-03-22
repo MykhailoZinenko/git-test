@@ -1,9 +1,11 @@
 package com.colonygenesis.core;
 
 import com.colonygenesis.ui.MainMenuScreen;
+import com.colonygenesis.ui.ScreenManager;
 import com.colonygenesis.ui.styling.AppTheme;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class ExoplanetColonyApp extends Application {
@@ -15,11 +17,8 @@ public class ExoplanetColonyApp extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
 
-        game = new Game();
-
-        MainMenuScreen mainMenu = new MainMenuScreen();
-
-        scene = new Scene(mainMenu, 1280, 800);
+        StackPane root = new StackPane();
+        scene = new Scene(root, 1280, 800);
 
         scene.getStylesheets().addAll(
                 AppTheme.MAIN_STYLESHEET,
@@ -30,6 +29,16 @@ public class ExoplanetColonyApp extends Application {
         primaryStage.setScene(scene);
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(600);
+
+        game = new Game();
+
+        ScreenManager screenManager = ScreenManager.getInstance();
+        screenManager.initialize(primaryStage, scene);
+
+        screenManager.registerScreen(GameState.MAIN_MENU, new MainMenuScreen());
+
+        screenManager.activateScreen(GameState.MAIN_MENU);
+
         primaryStage.show();
     }
 
