@@ -6,6 +6,6 @@ module com.colonygenesis.oop_project {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
 
-    opens com.colonygenesis.oop_project to javafx.fxml;
-    exports com.colonygenesis.oop_project;
+    opens com.colonygenesis.core to javafx.fxml;
+    exports com.colonygenesis.core;
 }
