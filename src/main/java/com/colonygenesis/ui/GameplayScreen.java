@@ -2,7 +2,6 @@ package com.colonygenesis.ui;
 
 import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
-import com.colonygenesis.ui.styling.AppTheme;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -14,7 +13,7 @@ import javafx.scene.text.Font;
 
 public class GameplayScreen extends BorderPane implements IScreenController {
 
-    private Game game;
+    private final Game game;
 
     public GameplayScreen(Game game) {
         this.game = game;

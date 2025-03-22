@@ -13,7 +13,7 @@ public class ScreenManager {
     private Stage primaryStage;
     private Scene scene;
     private IScreenController currentScreen;
-    private Map<GameState, IScreenController> screens = new HashMap<>();
+    private final Map<GameState, IScreenController> screens = new HashMap<>();
 
     private ScreenManager() {}
 
