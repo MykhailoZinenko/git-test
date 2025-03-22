@@ -62,4 +62,8 @@ public class ScreenManager {
         }
         return null;
     }
+
+    public boolean isScreenRegistered(GameState gameState) {
+        return screens.containsKey(gameState);
+    }
 }
