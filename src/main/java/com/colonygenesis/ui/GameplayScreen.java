@@ -2,6 +2,7 @@ package com.colonygenesis.ui;
 
 import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
+import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -15,18 +16,36 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
+import java.util.logging.Logger;
+
+/**
+ * Main gameplay screen of the application.
+ * Displays the game map and colony information.
+ */
 public class GameplayScreen extends BorderPane implements IScreenController {
+    private static final Logger LOGGER = LoggerUtil.getLogger(GameplayScreen.class);
 
     private Game game;
     private MapView mapView;
     private boolean hasShownInitially = false;
 
+    /**
+     * Constructs a new gameplay screen for the specified game.
+     *
+     * @param game The game to display
+     */
     public GameplayScreen(Game game) {
         this.game = game;
+        LOGGER.info("Creating gameplay screen for colony: " + game.getColonyName());
         initializeUI();
     }
 
+    /**
+     * Initializes the UI components for the gameplay screen.
+     */
     private void initializeUI() {
+        LOGGER.fine("Initializing GameplayScreen UI");
+
         Label colonyInfoLabel = new Label(game.getColonyName() + " - " + game.getPlanetType());
         colonyInfoLabel.setFont(Font.font(20));
         colonyInfoLabel.setTextFill(Color.WHITE);
@@ -61,13 +80,16 @@ public class GameplayScreen extends BorderPane implements IScreenController {
 
         setTop(headerBox);
         setCenter(centerPanel);
-
         setStyle("-fx-background-color: #121212;");
 
         Platform.runLater(() -> mapView.resetView());
     }
 
+    /**
+     * Shows the pause menu.
+     */
     private void showMenu() {
+        LOGGER.info("Opening game menu");
         ScreenManager screenManager = ScreenManager.getInstance();
 
         if (!screenManager.isScreenRegistered(GameState.PAUSE_MENU)) {
@@ -85,10 +107,12 @@ public class GameplayScreen extends BorderPane implements IScreenController {
 
     @Override
     public void initialize() {
+        LOGGER.fine("GameplayScreen initialized");
     }
 
     @Override
     public void onShow() {
+        LOGGER.fine("GameplayScreen shown");
         if (game.getCurrentTurn() == 1 && !hasShownInitially) {
             Platform.runLater(() -> mapView.resetView());
             hasShownInitially = true;
@@ -97,9 +121,9 @@ public class GameplayScreen extends BorderPane implements IScreenController {
 
     @Override
     public void onHide() {
+        LOGGER.fine("GameplayScreen hidden");
     }
 
     @Override
-    public void update() {
-    }
+    public void update() {}
 }

@@ -4,6 +4,7 @@ import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.map.PlanetType;
 import com.colonygenesis.ui.styling.AppTheme;
+import com.colonygenesis.util.LoggerUtil;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -11,17 +12,32 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
+import java.util.logging.Logger;
+
+/**
+ * Game setup screen that allows players to configure a new game.
+ * Provides options for colony name and planet type selection.
+ */
 public class GameSetupScreen extends BorderPane implements IScreenController {
+    private static final Logger LOGGER = LoggerUtil.getLogger(GameSetupScreen.class);
 
     private TextField colonyNameField;
     private ComboBox<PlanetType> planetTypeComboBox;
     private TextArea planetDescription;
 
+    /**
+     * Constructs a new game setup screen and initializes the UI components.
+     */
     public GameSetupScreen() {
         initializeUI();
     }
 
+    /**
+     * Initializes the UI components for the game setup screen.
+     */
     private void initializeUI() {
+        LOGGER.fine("Initializing GameSetupScreen UI");
+
         VBox formContainer = new VBox(20);
         formContainer.setAlignment(Pos.CENTER);
         formContainer.setPadding(new Insets(30));
@@ -97,33 +113,30 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
         formContainer.getChildren().addAll(titleLabel, setupGrid, buttonBox);
 
         setCenter(formContainer);
-
         setStyle("-fx-background-color: linear-gradient(to bottom, #0d1b2a, #1b263b, #415a77);");
 
         try {
-            System.out.println("Attempting to find image resource...");
             var url = getClass().getResource("/images/space_background.jpg");
-            System.out.println("Image URL: " + url);
-
             if (url != null) {
                 setStyle("-fx-background-image: url('" + url.toExternalForm() + "'); " +
                         "-fx-background-size: cover;");
-                System.out.println("Image found and applied");
+                LOGGER.fine("Background image applied successfully");
             } else {
-                System.out.println("Image not found, using gradient background");
+                LOGGER.warning("Background image not found, using gradient background");
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error loading background: " + e.getMessage());
+            LOGGER.log(java.util.logging.Level.WARNING, "Error loading background image", e);
         }
     }
 
+    /**
+     * Starts a new game with the configured settings and transitions to the gameplay screen.
+     */
     private void startNewGame() {
         String colonyName = colonyNameField.getText();
         PlanetType planetType = planetTypeComboBox.getValue();
 
-        System.out.println("Starting new game with colony: " + colonyName +
-                ", planet type: " + planetType);
+        LOGGER.info("Starting new game with colony: " + colonyName + ", planet type: " + planetType);
 
         Game game = new Game();
         game.initialize(colonyName, planetType, 30);
@@ -131,7 +144,6 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
 
         GameplayScreen gameplayScreen = new GameplayScreen(game);
         ScreenManager.getInstance().registerScreen(GameState.GAMEPLAY, gameplayScreen);
-
         ScreenManager.getInstance().activateScreen(GameState.GAMEPLAY);
     }
 
@@ -141,16 +153,21 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
     }
 
     @Override
-    public void initialize() {}
+    public void initialize() {
+        LOGGER.fine("GameSetupScreen initialized");
+    }
 
     @Override
     public void onShow() {
+        LOGGER.fine("GameSetupScreen shown");
         colonyNameField.setText("New Colony");
         planetTypeComboBox.setValue(PlanetType.TEMPERATE);
     }
 
     @Override
-    public void onHide() {}
+    public void onHide() {
+        LOGGER.fine("GameSetupScreen hidden");
+    }
 
     @Override
     public void update() {}

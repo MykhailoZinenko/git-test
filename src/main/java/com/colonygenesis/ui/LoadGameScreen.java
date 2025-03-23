@@ -3,6 +3,7 @@ package com.colonygenesis.ui;
 import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.ui.styling.AppTheme;
+import com.colonygenesis.util.LoggerUtil;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -14,16 +15,30 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.util.List;
+import java.util.logging.Logger;
 
+/**
+ * Screen for loading saved games.
+ * Displays a list of saved games and allows the player to select and load one.
+ */
 public class LoadGameScreen extends BorderPane implements IScreenController {
+    private static final Logger LOGGER = LoggerUtil.getLogger(LoadGameScreen.class);
 
     private ListView<Game.SaveGameInfo> savesList;
 
+    /**
+     * Constructs a new load game screen and initializes the UI components.
+     */
     public LoadGameScreen() {
         initializeUI();
     }
 
+    /**
+     * Initializes the UI components for the load game screen.
+     */
     private void initializeUI() {
+        LOGGER.fine("Initializing LoadGameScreen UI");
+
         VBox container = new VBox(20);
         container.setAlignment(Pos.CENTER);
         container.setPadding(new Insets(30));
@@ -47,10 +62,16 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
 
         savesList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             loadButton.setDisable(newVal == null);
+            if (newVal != null) {
+                LOGGER.fine("Save game selected: " + newVal.colonyName());
+            }
         });
 
         loadButton.setOnAction(e -> loadSelectedGame());
-        backButton.setOnAction(e -> ScreenManager.getInstance().activateScreen(GameState.MAIN_MENU));
+        backButton.setOnAction(e -> {
+            LOGGER.info("Returning to main menu");
+            ScreenManager.getInstance().activateScreen(GameState.MAIN_MENU);
+        });
 
         HBox buttonBox = new HBox(20);
         buttonBox.setAlignment(Pos.CENTER);
@@ -59,44 +80,52 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
         container.getChildren().addAll(titleLabel, savesList, buttonBox);
 
         setCenter(container);
-
         setStyle("-fx-background-color: linear-gradient(to bottom, #0d1b2a, #1b263b, #415a77);");
 
         try {
-            System.out.println("Attempting to find image resource...");
             var url = getClass().getResource("/images/space_background.jpg");
-            System.out.println("Image URL: " + url);
-
             if (url != null) {
                 setStyle("-fx-background-image: url('" + url.toExternalForm() + "'); " +
                         "-fx-background-size: cover;");
-                System.out.println("Image found and applied");
+                LOGGER.fine("Background image applied successfully");
             } else {
-                System.out.println("Image not found, using gradient background");
+                LOGGER.warning("Background image not found, using gradient background");
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error loading background: " + e.getMessage());
+            LOGGER.log(java.util.logging.Level.WARNING, "Error loading background image", e);
         }
     }
 
+    /**
+     * Loads the selected saved game and transitions to the gameplay screen.
+     */
     private void loadSelectedGame() {
         Game.SaveGameInfo selected = savesList.getSelectionModel().getSelectedItem();
         if (selected != null) {
+            LOGGER.info("Loading game from: " + selected.filename());
+
             Game loadedGame = Game.loadGame(selected.filename());
             if (loadedGame != null) {
                 GameplayScreen gameplayScreen = new GameplayScreen(loadedGame);
                 ScreenManager.getInstance().registerScreen(GameState.GAMEPLAY, gameplayScreen);
-
                 ScreenManager.getInstance().activateScreen(GameState.GAMEPLAY);
+            } else {
+                LOGGER.severe("Failed to load game from: " + selected.filename());
             }
+        } else {
+            LOGGER.warning("Attempted to load game with no selection");
         }
     }
 
+    /**
+     * Refreshes the list of saved games.
+     */
     private void refreshSavesList() {
+        LOGGER.fine("Refreshing saved games list");
         List<Game.SaveGameInfo> saves = Game.getSavedGames();
         savesList.getItems().clear();
         savesList.getItems().addAll(saves);
+        LOGGER.info("Found " + saves.size() + " saved games");
     }
 
     @Override
@@ -106,18 +135,20 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
 
     @Override
     public void initialize() {
+        LOGGER.fine("LoadGameScreen initialized");
     }
 
     @Override
     public void onShow() {
+        LOGGER.fine("LoadGameScreen shown");
         refreshSavesList();
     }
 
     @Override
     public void onHide() {
+        LOGGER.fine("LoadGameScreen hidden");
     }
 
     @Override
-    public void update() {
-    }
+    public void update() {}
 }

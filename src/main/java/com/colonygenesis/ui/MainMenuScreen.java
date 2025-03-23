@@ -2,6 +2,7 @@ package com.colonygenesis.ui;
 
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.ui.styling.AppTheme;
+import com.colonygenesis.util.LoggerUtil;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -9,13 +10,28 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
-public class MainMenuScreen extends BorderPane implements IScreenController {
+import java.util.logging.Logger;
 
+/**
+ * Main menu screen of the application.
+ * Provides buttons for navigation to game setup, loading saved games, and other options.
+ */
+public class MainMenuScreen extends BorderPane implements IScreenController {
+    private static final Logger LOGGER = LoggerUtil.getLogger(MainMenuScreen.class);
+
+    /**
+     * Constructs a new main menu screen and initializes the UI components.
+     */
     public MainMenuScreen() {
         initializeUI();
     }
 
+    /**
+     * Initializes the UI components for the main menu.
+     */
     private void initializeUI() {
+        LOGGER.fine("Initializing MainMenuScreen UI");
+
         Label titleLabel = new Label("Exoplanet: Colony Genesis");
         titleLabel.getStyleClass().add(AppTheme.STYLE_TITLE);
 
@@ -35,48 +51,62 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
         menuBox.getChildren().addAll(titleLabel, newGameBtn, loadGameBtn, settingsBtn, exitBtn);
 
         setCenter(menuBox);
-
         setStyle("-fx-background-color: linear-gradient(to bottom, #0d1b2a, #1b263b, #415a77);");
 
         try {
-            System.out.println("Attempting to find image resource...");
             var url = getClass().getResource("/images/space_background.jpg");
-            System.out.println("Image URL: " + url);
-
             if (url != null) {
                 setStyle("-fx-background-image: url('" + url.toExternalForm() + "'); " +
                         "-fx-background-size: cover;");
-                System.out.println("Image found and applied");
+                LOGGER.fine("Background image applied successfully");
             } else {
-                System.out.println("Image not found, using gradient background");
+                LOGGER.warning("Background image not found, using gradient background");
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error loading background: " + e.getMessage());
+            LOGGER.log(java.util.logging.Level.WARNING, "Error loading background image", e);
         }
     }
 
+    /**
+     * Creates a styled menu button.
+     *
+     * @param text The button text
+     * @return A styled button
+     */
     private Button createMenuButton(String text) {
         Button button = new Button(text);
         button.getStyleClass().add(AppTheme.STYLE_MENU_BUTTON);
         return button;
     }
 
+    /**
+     * Handles the new game button click.
+     */
     private void handleNewGameRequest() {
-        System.out.println("New Game requested");
+        LOGGER.info("New Game requested");
         ScreenManager.getInstance().activateScreen(GameState.GAME_SETUP);
     }
 
+    /**
+     * Handles the load game button click.
+     */
     private void handleLoadGameRequest() {
-        System.out.println("Load Game requested");
+        LOGGER.info("Load Game requested");
         ScreenManager.getInstance().activateScreen(GameState.LOAD_GAME);
     }
 
+    /**
+     * Handles the settings button click.
+     */
     private void handleSettingsRequest() {
-        System.out.println("Settings requested");
+        LOGGER.info("Settings requested");
     }
 
+    /**
+     * Handles the exit button click.
+     */
     private void handleExitRequest() {
+        LOGGER.info("Exit requested - shutting down application");
         System.exit(0);
     }
 
@@ -86,13 +116,19 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
     }
 
     @Override
-    public void initialize() {}
+    public void initialize() {
+        LOGGER.fine("MainMenuScreen initialized");
+    }
 
     @Override
-    public void onShow() {}
+    public void onShow() {
+        LOGGER.fine("MainMenuScreen shown");
+    }
 
     @Override
-    public void onHide() {}
+    public void onHide() {
+        LOGGER.fine("MainMenuScreen hidden");
+    }
 
     @Override
     public void update() {}

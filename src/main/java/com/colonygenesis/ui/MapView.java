@@ -9,8 +9,11 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
+/**
+ * Map view component that displays the game world as a hexagonal grid.
+ * Supports panning and zooming functionality.
+ */
 public class MapView extends Pane {
-
     private Canvas canvas;
     private GraphicsContext gc;
 
@@ -26,6 +29,9 @@ public class MapView extends Pane {
     private double lastMouseY;
     private boolean isDragging = false;
 
+    /**
+     * Constructs a new map view and initializes the UI components.
+     */
     public MapView() {
         canvas = new Canvas();
         canvas.widthProperty().bind(widthProperty());
@@ -37,13 +43,13 @@ public class MapView extends Pane {
         setOnMousePressed(this::handleMousePressed);
         setOnMouseDragged(this::handleMouseDragged);
         setOnMouseReleased(this::handleMouseReleased);
-
         setOnScroll(this::handleScroll);
 
         widthProperty().addListener((obs, oldVal, newVal) -> {
             resetView();
             draw();
         });
+
         heightProperty().addListener((obs, oldVal, newVal) -> {
             resetView();
             draw();
@@ -52,6 +58,11 @@ public class MapView extends Pane {
         Platform.runLater(this::resetView);
     }
 
+    /**
+     * Handles mouse press events.
+     *
+     * @param event The mouse event
+     */
     private void handleMousePressed(MouseEvent event) {
         if (event.getButton() == MouseButton.PRIMARY) {
             lastMouseX = event.getX();
@@ -60,6 +71,11 @@ public class MapView extends Pane {
         }
     }
 
+    /**
+     * Handles mouse drag events.
+     *
+     * @param event The mouse event
+     */
     private void handleMouseDragged(MouseEvent event) {
         if (isDragging) {
             double dx = event.getX() - lastMouseX;
@@ -75,10 +91,20 @@ public class MapView extends Pane {
         }
     }
 
+    /**
+     * Handles mouse release events.
+     *
+     * @param event The mouse event
+     */
     private void handleMouseReleased(MouseEvent event) {
         isDragging = false;
     }
 
+    /**
+     * Handles scroll events for zooming.
+     *
+     * @param event The scroll event
+     */
     private void handleScroll(ScrollEvent event) {
         double mouseX = event.getX();
         double mouseY = event.getY();
@@ -108,6 +134,9 @@ public class MapView extends Pane {
         event.consume();
     }
 
+    /**
+     * Draws the map view.
+     */
     public void draw() {
         if (canvas.getWidth() <= 0 || canvas.getHeight() <= 0) return;
 
@@ -127,6 +156,9 @@ public class MapView extends Pane {
         gc.strokeRect(0, 0, canvas.getWidth(), canvas.getHeight());
     }
 
+    /**
+     * Draws the hexagonal grid.
+     */
     private void drawHexGrid() {
         double width = mapWidth * hexSize * 1.5;
         double height = mapHeight * hexSize * Math.sqrt(3);
@@ -144,6 +176,12 @@ public class MapView extends Pane {
         gc.fillText("Map Size: " + mapWidth + "x" + mapHeight, 10, 20);
     }
 
+    /**
+     * Draws a hexagon at the specified grid coordinates.
+     *
+     * @param gridX The grid x coordinate
+     * @param gridY The grid y coordinate
+     */
     private void drawHexagon(int gridX, int gridY) {
         double centerX = gridX * hexSize * 1.5;
         double centerY = gridY * hexSize * Math.sqrt(3);
@@ -182,8 +220,17 @@ public class MapView extends Pane {
         }
     }
 
+    /**
+     * Sets the map size.
+     *
+     * @param width The map width
+     * @param height The map height
+     */
     public void setMapSize(int width, int height) {}
 
+    /**
+     * Resets the view to center the map and reset zoom.
+     */
     public void resetView() {
         translateX = canvas.getWidth() / 2 - (mapWidth * hexSize * 1.5) / 2;
         translateY = canvas.getHeight() / 2 - (mapHeight * hexSize * Math.sqrt(3)) / 2;
@@ -191,7 +238,12 @@ public class MapView extends Pane {
         draw();
     }
 
-
+    /**
+     * Handles resizing of the view.
+     *
+     * @param width The new width
+     * @param height The new height
+     */
     @Override
     public void resize(double width, double height) {
         super.resize(width, height);
