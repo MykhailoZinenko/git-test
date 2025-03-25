@@ -4,6 +4,7 @@ import com.colonygenesis.core.Game;
 import com.colonygenesis.util.LoggerUtil;
 import com.colonygenesis.util.Result;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.EnumMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
  */
 public class ResourceManager implements Serializable {
     private static final Logger LOGGER = LoggerUtil.getLogger(ResourceManager.class);
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final Game game;

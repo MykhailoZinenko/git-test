@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 public class GameplayScreen extends BorderPane implements IScreenController {
     private static final Logger LOGGER = LoggerUtil.getLogger(GameplayScreen.class);
 
-    private Game game;
+    private final Game game;
     private MapView mapView;
     private boolean hasShownInitially = false;
 

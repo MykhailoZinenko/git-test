@@ -14,7 +14,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.util.logging.Logger;
@@ -138,12 +137,9 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
         slideIn.setFromY(-20);
         slideIn.setToY(0);
 
-        menuContainer.setUserData(new Runnable() {
-            @Override
-            public void run() {
-                fadeIn.play();
-                slideIn.play();
-            }
+        menuContainer.setUserData((Runnable) () -> {
+            fadeIn.play();
+            slideIn.play();
         });
     }
 

@@ -4,7 +4,6 @@ import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;

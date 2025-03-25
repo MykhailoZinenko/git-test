@@ -2,6 +2,7 @@ package com.colonygenesis.core;
 
 import com.colonygenesis.util.LoggerUtil;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.logging.Logger;
 
@@ -11,6 +12,7 @@ import java.util.logging.Logger;
  */
 public class TurnManager implements Serializable {
     private static final Logger LOGGER = LoggerUtil.getLogger(TurnManager.class);
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final Game game;

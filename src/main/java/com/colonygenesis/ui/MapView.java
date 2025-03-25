@@ -14,8 +14,8 @@ import javafx.scene.paint.Color;
  * Supports panning and zooming functionality.
  */
 public class MapView extends Pane {
-    private Canvas canvas;
-    private GraphicsContext gc;
+    private final Canvas canvas;
+    private final GraphicsContext gc;
 
     private final int mapWidth = 30;
     private final int mapHeight = 20;
