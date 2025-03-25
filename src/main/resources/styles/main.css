@@ -1,103 +1,481 @@
+/*
+ * Main stylesheet for Exoplanet: Colony Genesis
+ */
+
+/* ====== Base Styles ====== */
 .root {
-    -fx-background-color: #121212;
+    -fx-background-color: rgb(16, 20, 36); /* Dark blue-black */
     -fx-font-family: "System";
     -fx-font-size: 14px;
-    -fx-text-fill: #E0E0E0;
+    -fx-text-fill: rgb(230, 230, 230);
 }
 
-.app-title {
-    -fx-font-size: 36px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #E0E0E0;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.7), 5, 0, 0, 2);
+/* ====== Screen Styles ====== */
+.game-screen {
+    -fx-background-color: rgb(16, 20, 36);
 }
 
-.subtitle {
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #E0E0E0;
+/* Style for menu screens */
+.menu-screen {
+    -fx-background-color: rgb(16, 20, 36);
+    -fx-background-image: url("/images/space_background.jpg");
+    -fx-background-size: cover;
 }
 
-.menu-button {
-    -fx-background-color: #2E5077;
-    -fx-text-fill: white;
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
-    -fx-padding: 12px;
-    -fx-background-radius: 5px;
-    -fx-cursor: hand;
-    -fx-min-width: 220px;
+.menu-container {
+    -fx-background-color: rgba(28, 35, 64, 0.85);
+    -fx-background-radius: 10px;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 2px;
+    -fx-border-radius: 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0, 0, 5);
+    -fx-padding: 20px;
+    -fx-spacing: 15px;
 }
 
-.menu-button:hover {
-    -fx-background-color: #4B7399;
-}
-
-.menu-button:pressed {
-    -fx-background-color: #1D3557;
-}
-
-.primary-button {
-    -fx-background-color: #2E5077;
-    -fx-text-fill: white;
-}
-
-.success-button {
-    -fx-background-color: #28a745;
-    -fx-text-fill: white;
-}
-
-.warning-button {
-    -fx-background-color: #ffc107;
-    -fx-text-fill: black;
-}
-
-.danger-button {
-    -fx-background-color: #dc3545;
-    -fx-text-fill: white;
-}
-
+/* ====== Panel Components ====== */
 .game-panel {
-    -fx-background-color: #1E1E1E;
+    -fx-background-color: rgb(28, 35, 64);
     -fx-background-radius: 5px;
-    -fx-border-color: #333333;
-    -fx-border-radius: 5px;
+    -fx-border-color: rgb(75, 115, 153);
     -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 5, 0, 0, 2);
     -fx-padding: 10px;
 }
 
-.panel-header {
-    -fx-font-size: 18px;
+.panel-title {
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
-    -fx-text-fill: #E0E0E0;
-    -fx-padding: 5px 0;
-    -fx-border-color: transparent transparent #333333 transparent;
-    -fx-border-width: 0 0 1px 0;
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-padding: 0 0 5 0;
+    -fx-border-color: transparent transparent rgb(75, 115, 153) transparent;
+    -fx-border-width: 0 0 1 0;
 }
 
-.scroll-bar {
-    -fx-background-color: #1E1E1E;
+.panel-content {
+    -fx-padding: 10px 5px;
 }
 
-.scroll-bar .thumb {
-    -fx-background-color: #555555;
+.game-header {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 10px;
+    -fx-spacing: 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 5, 0, 0, 2);
 }
 
-.scroll-bar .increment-button, .scroll-bar .decrement-button {
-    -fx-background-color: #333333;
+.game-footer {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 10px;
+    -fx-alignment: center-right;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 5, 0, 0, -2);
 }
 
-.hex-tile {
-    -fx-stroke: #444444;
+.game-sidebar {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 0 1 0 0;
+    -fx-padding: 10px;
+    -fx-spacing: 15px;
+}
+
+/* ====== Text Styles ====== */
+.game-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);
+}
+
+.game-subtitle {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: rgb(180, 180, 180);
+}
+
+.game-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: rgb(230, 230, 230);
+}
+
+.game-description {
+    -fx-font-size: 12px;
+    -fx-text-fill: rgb(180, 180, 180);
+    -fx-wrap-text: true;
+}
+
+/* ====== Button Styles ====== */
+.game-button {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-font-weight: bold;
+    -fx-padding: 8px 15px;
+    -fx-background-radius: 4px;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-cursor: hand;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 1, 0, 0, 1);
+}
+
+.game-button:hover {
+    -fx-background-color: rgb(60, 75, 138);
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 2, 0, 0, 1);
+}
+
+.game-button:pressed {
+    -fx-background-color: rgb(30, 40, 82);
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.5), 3, 0, 0, 1);
+}
+
+.button-primary {
+    -fx-background-color: rgb(75, 115, 153);
+    -fx-border-color: rgb(105, 145, 183);
+}
+
+.button-primary:hover {
+    -fx-background-color: rgb(95, 135, 173);
+}
+
+.button-primary:pressed {
+    -fx-background-color: rgb(55, 95, 133);
+}
+
+.button-success {
+    -fx-background-color: rgb(76, 175, 80);
+    -fx-border-color: rgb(106, 205, 110);
+}
+
+.button-success:hover {
+    -fx-background-color: rgb(96, 195, 100);
+}
+
+.button-success:pressed {
+    -fx-background-color: rgb(56, 155, 60);
+}
+
+.button-warning {
+    -fx-background-color: rgb(255, 152, 0);
+    -fx-border-color: rgb(255, 182, 30);
+}
+
+.button-warning:hover {
+    -fx-background-color: rgb(255, 172, 20);
+}
+
+.button-warning:pressed {
+    -fx-background-color: rgb(235, 132, 0);
+}
+
+.button-danger {
+    -fx-background-color: rgb(244, 67, 54);
+    -fx-border-color: rgb(255, 97, 84);
+}
+
+.button-danger:hover {
+    -fx-background-color: rgb(255, 87, 74);
+}
+
+.button-danger:pressed {
+    -fx-background-color: rgb(224, 47, 34);
+}
+
+.button-menu {
+    -fx-background-color: rgb(173, 127, 76);
+    -fx-border-color: rgb(203, 157, 106);
+    -fx-min-width: 200px;
+    -fx-min-height: 40px;
+    -fx-font-size: 16px;
+}
+
+.button-menu:hover {
+    -fx-background-color: rgb(193, 147, 96);
+}
+
+.button-menu:pressed {
+    -fx-background-color: rgb(153, 107, 56);
+}
+
+.button-small {
+    -fx-padding: 4px 8px;
+    -fx-font-size: 12px;
+}
+
+.button-large {
+    -fx-padding: 12px 20px;
+    -fx-font-size: 16px;
+}
+
+/* ====== Input Controls ====== */
+.game-text-field {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-background-radius: 4px;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-prompt-text-fill: rgb(140, 140, 140);
+    -fx-padding: 5px 8px;
+}
+
+.game-text-field:focused {
+    -fx-border-color: rgb(105, 145, 183);
+    -fx-background-color: rgb(50, 60, 102);
+}
+
+.game-combo-box {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-background-radius: 4px;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-prompt-text-fill: rgb(140, 140, 140);
+}
+
+.game-combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-padding: 3px 6px;
+}
+
+.game-combo-box .combo-box-popup .list-view {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+}
+
+.game-check-box {
+    -fx-text-fill: rgb(230, 230, 230);
+}
+
+.game-check-box .box {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+}
+
+.game-check-box:selected .mark {
+    -fx-background-color: rgb(76, 175, 80);
+}
+
+/* ====== List and Table Styles ====== */
+.game-list-view {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+}
+
+.game-list-view .list-cell {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-padding: 8px;
+    -fx-border-color: transparent transparent rgb(75, 115, 153) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.game-list-view .list-cell:selected {
+    -fx-background-color: rgb(75, 115, 153);
+    -fx-text-fill: white;
+}
+
+.game-list-view .list-cell:hover {
+    -fx-background-color: rgb(60, 75, 138);
+}
+
+.game-table-view {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-table-cell-border-color: rgb(75, 115, 153);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+}
+
+.game-table-view .column-header {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-border-color: transparent transparent rgb(75, 115, 153) transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 5px;
+}
+
+.game-table-view .column-header-background {
+    -fx-background-color: rgb(40, 50, 92);
+}
+
+.game-table-view .table-cell {
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-alignment: center-left;
+    -fx-padding: 5px;
+}
+
+.game-table-view .table-row-cell {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-border-color: transparent transparent rgb(60, 75, 138) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.game-table-view .table-row-cell:selected {
+    -fx-background-color: rgb(75, 115, 153);
+}
+
+.game-table-view .table-row-cell:hover {
+    -fx-background-color: rgb(60, 75, 138);
+}
+
+/* ====== Resource Display ====== */
+.resource-bar {
+    -fx-alignment: center-left;
+    -fx-spacing: 15px;
+    -fx-padding: 0 0 0 10;
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-background-radius: 5;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1;
+    -fx-border-radius: 5;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 2, 0, 0, 1);
+}
+
+.resource-item {
+    -fx-alignment: center-left;
+    -fx-spacing: 5px;
+    -fx-padding: 5 8;
+}
+
+.resource-icon {
+    -fx-stroke: white;
     -fx-stroke-width: 1px;
 }
 
-.hex-tile:hover {
+.resource-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+}
+
+.resource-positive {
+    -fx-text-fill: rgb(76, 175, 80); /* Green */
+}
+
+.resource-negative {
+    -fx-text-fill: rgb(244, 67, 54); /* Red */
+}
+
+.resource-neutral {
+    -fx-text-fill: white;
+}
+
+/* ====== Turn Information ====== */
+.turn-info {
+    -fx-alignment: center-right;
+    -fx-spacing: 3px;
+    -fx-padding: 5 10;
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-background-radius: 5;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1;
+    -fx-border-radius: 5;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 2, 0, 0, 1);
+}
+
+.turn-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+}
+
+.phase-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: rgb(180, 180, 180);
+}
+
+/* ====== Map View ====== */
+.map-view {
+    -fx-background-color: rgb(16, 20, 36);
+}
+
+.hex-tile {
+    -fx-stroke: rgb(60, 75, 138);
+    -fx-stroke-width: 1px;
+}
+
+.hex-tile-selected {
+    -fx-stroke: rgb(76, 175, 80);
+    -fx-stroke-width: 2px;
+}
+
+.hex-tile-hover {
     -fx-stroke: white;
     -fx-stroke-width: 2px;
 }
 
-.hex-tile-selected {
-    -fx-stroke: #ffc107;
-    -fx-stroke-width: 2px;
+/* ====== Tooltips ====== */
+.tooltip {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-background-radius: 4px;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-padding: 5px;
+    -fx-font-size: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);
+}
+
+/* ====== ScrollBars ====== */
+.scroll-bar {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-background-radius: 0;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: rgb(75, 115, 153);
+    -fx-background-radius: 2px;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: rgb(40, 50, 92);
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-background-color: rgb(180, 180, 180);
+}
+
+/* ====== Dialog Styles ====== */
+.dialog-pane {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 2px;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-border-color: transparent transparent rgb(75, 115, 153) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.dialog-pane .header-panel .label {
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.dialog-pane .content.label {
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-font-size: 14px;
+}
+
+.dialog-pane .button-bar .button {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 1px;
+    -fx-background-radius: 4px;
 }

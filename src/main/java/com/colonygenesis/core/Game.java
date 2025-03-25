@@ -1,6 +1,7 @@
 package com.colonygenesis.core;
 
 import com.colonygenesis.map.PlanetType;
+import com.colonygenesis.resource.ResourceManager;
 import com.colonygenesis.util.LoggerUtil;
 
 import java.io.*;
@@ -33,6 +34,9 @@ public class Game implements Serializable {
     private int currentTurn = 1;
     private LocalDateTime saveDate;
 
+    private ResourceManager resourceManager;
+    private TurnManager turnManager;
+
     /**
      * Constructs a new game instance.
      */
@@ -55,6 +59,10 @@ public class Game implements Serializable {
         this.planetType = planetType;
         this.mapSize = mapSize;
         this.currentTurn = 1;
+
+        this.resourceManager = new ResourceManager(this);
+        this.turnManager = new TurnManager(this);
+
         this.initialized = true;
 
         LOGGER.info("Game initialization complete");
@@ -98,6 +106,19 @@ public class Game implements Serializable {
     public void stop() {
         LOGGER.info("Game stopped: " + colonyName);
         this.running = false;
+    }
+
+    /**
+     * Advances the game to the next turn.
+     */
+    public void advanceTurn() {
+        LOGGER.info("Advancing from turn " + currentTurn + " to " + (currentTurn + 1));
+
+        resourceManager.processTurn();
+
+        currentTurn++;
+
+        LOGGER.info("Advanced to turn " + currentTurn);
     }
 
     /**
@@ -196,6 +217,24 @@ public class Game implements Serializable {
         }
 
         return savedGames;
+    }
+
+    /**
+     * Gets the resource manager.
+     *
+     * @return The resource manager
+     */
+    public ResourceManager getResourceManager() {
+        return resourceManager;
+    }
+
+    /**
+     * Gets the turn manager.
+     *
+     * @return The turn manager
+     */
+    public TurnManager getTurnManager() {
+        return turnManager;
     }
 
     /**

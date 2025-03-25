@@ -45,15 +45,8 @@ public class MapView extends Pane {
         setOnMouseReleased(this::handleMouseReleased);
         setOnScroll(this::handleScroll);
 
-        widthProperty().addListener((obs, oldVal, newVal) -> {
-            resetView();
-            draw();
-        });
-
-        heightProperty().addListener((obs, oldVal, newVal) -> {
-            resetView();
-            draw();
-        });
+        widthProperty().addListener((obs, oldVal, newVal) -> draw());
+        heightProperty().addListener((obs, oldVal, newVal) -> draw());
 
         Platform.runLater(this::resetView);
     }
@@ -138,7 +131,7 @@ public class MapView extends Pane {
      * Draws the map view.
      */
     public void draw() {
-        if (canvas.getWidth() <= 0 || canvas.getHeight() <= 0) return;
+        if (getWidth() <= 0 || getHeight() <= 0) return;
 
         gc.setFill(Color.rgb(20, 20, 30));
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
@@ -221,25 +214,19 @@ public class MapView extends Pane {
     }
 
     /**
-     * Sets the map size.
-     *
-     * @param width The map width
-     * @param height The map height
-     */
-    public void setMapSize(int width, int height) {}
-
-    /**
      * Resets the view to center the map and reset zoom.
      */
     public void resetView() {
-        translateX = canvas.getWidth() / 2 - (mapWidth * hexSize * 1.5) / 2;
-        translateY = canvas.getHeight() / 2 - (mapHeight * hexSize * Math.sqrt(3)) / 2;
+        translateX = getWidth() / 2 - (mapWidth * hexSize * 1.5) / 2;
+        translateY = getHeight() / 2 - (mapHeight * hexSize * Math.sqrt(3)) / 2;
         scale = 1.0;
         draw();
     }
 
     /**
      * Handles resizing of the view.
+     * Overrides the resize method of the parent but doesn't attempt to
+     * directly set canvas dimensions since they're bound in the constructor.
      *
      * @param width The new width
      * @param height The new height
@@ -247,8 +234,6 @@ public class MapView extends Pane {
     @Override
     public void resize(double width, double height) {
         super.resize(width, height);
-        canvas.setWidth(width);
-        canvas.setHeight(height);
         draw();
     }
 }

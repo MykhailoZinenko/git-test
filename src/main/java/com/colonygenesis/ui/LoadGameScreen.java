@@ -30,6 +30,7 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
      * Constructs a new load game screen and initializes the UI components.
      */
     public LoadGameScreen() {
+        getStyleClass().addAll(AppTheme.STYLE_MENU_SCREEN, AppTheme.STYLE_LOAD_SCREEN);
         initializeUI();
     }
 
@@ -41,24 +42,23 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
 
         VBox container = new VBox(20);
         container.setAlignment(Pos.CENTER);
-        container.setPadding(new Insets(30));
+        container.getStyleClass().add(AppTheme.STYLE_MENU_CONTAINER);
         container.setMaxWidth(800);
         container.setMaxHeight(600);
-        container.setStyle("-fx-background-color: rgba(20, 20, 40, 0.85); -fx-background-radius: 10;");
 
         Label titleLabel = new Label("Load Game");
         titleLabel.getStyleClass().add(AppTheme.STYLE_TITLE);
 
         savesList = new ListView<>();
+        savesList.getStyleClass().add(AppTheme.STYLE_LIST_VIEW);
         savesList.setPrefHeight(400);
-        savesList.setStyle("-fx-background-color: rgba(30, 30, 50, 0.9); -fx-text-fill: white;");
 
         Button loadButton = new Button("Load Selected Game");
-        loadButton.getStyleClass().addAll(AppTheme.STYLE_MENU_BUTTON, "success-button");
+        loadButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_SUCCESS);
         loadButton.setDisable(true);
 
         Button backButton = new Button("Back");
-        backButton.getStyleClass().add(AppTheme.STYLE_MENU_BUTTON);
+        backButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_PRIMARY);
 
         savesList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             loadButton.setDisable(newVal == null);
@@ -80,20 +80,6 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
         container.getChildren().addAll(titleLabel, savesList, buttonBox);
 
         setCenter(container);
-        setStyle("-fx-background-color: linear-gradient(to bottom, #0d1b2a, #1b263b, #415a77);");
-
-        try {
-            var url = getClass().getResource("/images/space_background.jpg");
-            if (url != null) {
-                setStyle("-fx-background-image: url('" + url.toExternalForm() + "'); " +
-                        "-fx-background-size: cover;");
-                LOGGER.fine("Background image applied successfully");
-            } else {
-                LOGGER.warning("Background image not found, using gradient background");
-            }
-        } catch (Exception e) {
-            LOGGER.log(java.util.logging.Level.WARNING, "Error loading background image", e);
-        }
     }
 
     /**

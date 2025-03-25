@@ -10,7 +10,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 
 import java.util.logging.Logger;
 
@@ -29,6 +28,7 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
      * Constructs a new game setup screen and initializes the UI components.
      */
     public GameSetupScreen() {
+        getStyleClass().addAll(AppTheme.STYLE_MENU_SCREEN, AppTheme.STYLE_SETUP_SCREEN);
         initializeUI();
     }
 
@@ -40,17 +40,11 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
 
         VBox formContainer = new VBox(20);
         formContainer.setAlignment(Pos.CENTER);
-        formContainer.setPadding(new Insets(30));
+        formContainer.getStyleClass().add(AppTheme.STYLE_MENU_CONTAINER);
         formContainer.setMaxWidth(600);
-        formContainer.setBackground(new Background(new BackgroundFill(
-                Color.rgb(20, 20, 40, 0.85),
-                new CornerRadii(10),
-                Insets.EMPTY
-        )));
 
         Label titleLabel = new Label("New Colony Setup");
         titleLabel.getStyleClass().add(AppTheme.STYLE_TITLE);
-        titleLabel.setTextFill(Color.WHITE);
 
         GridPane setupGrid = new GridPane();
         setupGrid.setHgap(20);
@@ -59,31 +53,30 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
         setupGrid.setAlignment(Pos.CENTER);
 
         Label nameLabel = new Label("Colony Name:");
-        nameLabel.setTextFill(Color.WHITE);
-        nameLabel.setStyle("-fx-font-weight: bold;");
+        nameLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
 
         colonyNameField = new TextField("New Colony");
+        colonyNameField.getStyleClass().add(AppTheme.STYLE_TEXT_FIELD);
         colonyNameField.setPrefWidth(300);
 
         Label planetTypeLabel = new Label("Planet Type:");
-        planetTypeLabel.setTextFill(Color.WHITE);
-        planetTypeLabel.setStyle("-fx-font-weight: bold;");
+        planetTypeLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
 
         planetTypeComboBox = new ComboBox<>();
+        planetTypeComboBox.getStyleClass().add(AppTheme.STYLE_COMBO_BOX);
         planetTypeComboBox.getItems().addAll(PlanetType.values());
         planetTypeComboBox.setValue(PlanetType.TEMPERATE);
         planetTypeComboBox.setPrefWidth(300);
 
         Label descriptionLabel = new Label("Description:");
-        descriptionLabel.setTextFill(Color.WHITE);
-        descriptionLabel.setStyle("-fx-font-weight: bold;");
+        descriptionLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
 
         planetDescription = new TextArea();
         planetDescription.setEditable(false);
         planetDescription.setWrapText(true);
         planetDescription.setPrefRowCount(4);
         planetDescription.setPrefWidth(300);
-        planetDescription.setStyle("-fx-control-inner-background: rgba(240, 240, 240, 0.9);");
+        planetDescription.getStyleClass().add(AppTheme.STYLE_TEXT_FIELD);
 
         planetTypeComboBox.setOnAction(e ->
                 planetDescription.setText(planetTypeComboBox.getValue().getDescription())
@@ -99,11 +92,11 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
         setupGrid.add(planetDescription, 1, 2);
 
         Button backButton = new Button("Back");
-        backButton.getStyleClass().add(AppTheme.STYLE_MENU_BUTTON);
+        backButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_PRIMARY);
         backButton.setOnAction(e -> ScreenManager.getInstance().activateScreen(GameState.MAIN_MENU));
 
         Button startButton = new Button("Start Game");
-        startButton.getStyleClass().addAll(AppTheme.STYLE_MENU_BUTTON, "success-button");
+        startButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_SUCCESS);
         startButton.setOnAction(e -> startNewGame());
 
         HBox buttonBox = new HBox(20);
@@ -113,20 +106,6 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
         formContainer.getChildren().addAll(titleLabel, setupGrid, buttonBox);
 
         setCenter(formContainer);
-        setStyle("-fx-background-color: linear-gradient(to bottom, #0d1b2a, #1b263b, #415a77);");
-
-        try {
-            var url = getClass().getResource("/images/space_background.jpg");
-            if (url != null) {
-                setStyle("-fx-background-image: url('" + url.toExternalForm() + "'); " +
-                        "-fx-background-size: cover;");
-                LOGGER.fine("Background image applied successfully");
-            } else {
-                LOGGER.warning("Background image not found, using gradient background");
-            }
-        } catch (Exception e) {
-            LOGGER.log(java.util.logging.Level.WARNING, "Error loading background image", e);
-        }
     }
 
     /**

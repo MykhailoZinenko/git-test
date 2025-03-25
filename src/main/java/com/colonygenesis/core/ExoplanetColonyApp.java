@@ -8,9 +8,13 @@ import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+import java.net.URL;
 import java.util.logging.Logger;
 
 /**
@@ -39,15 +43,38 @@ public class ExoplanetColonyApp extends Application {
 
         StackPane root = new StackPane();
         scene = new Scene(root, 1280, 800);
-        scene.getStylesheets().addAll(
-                AppTheme.MAIN_STYLESHEET,
-                AppTheme.BOOTSTRAP_STYLESHEET
-        );
+
+        String cssPath = AppTheme.MAIN_STYLESHEET;
+        URL cssURL = getClass().getResource("/" + cssPath);
+        if (cssURL != null) {
+            String externalForm = cssURL.toExternalForm();
+            LOGGER.info("Loading CSS from: " + externalForm);
+            scene.getStylesheets().add(externalForm);
+        } else {
+            LOGGER.warning("Could not find CSS file: " + cssPath);
+        }
+
+        scene.getStylesheets().add(AppTheme.BOOTSTRAP_STYLESHEET);
 
         primaryStage.setTitle("Exoplanet: Colony Genesis");
         primaryStage.setScene(scene);
+
+        primaryStage.setFullScreen(true);
+        primaryStage.setFullScreenExitKeyCombination(KeyCombination.valueOf("F11"));
+        primaryStage.setFullScreenExitHint("Press F11 to toggle fullscreen mode");
+
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(600);
+
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.F11) {
+                primaryStage.setFullScreen(!primaryStage.isFullScreen());
+            }
+            else if (event.getCode() == KeyCode.ESCAPE && primaryStage.isFullScreen()) {
+                primaryStage.setFullScreen(false);
+                event.consume();
+            }
+        });
 
         game = new Game();
 

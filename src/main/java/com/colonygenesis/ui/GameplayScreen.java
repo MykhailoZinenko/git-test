@@ -2,25 +2,20 @@ package com.colonygenesis.ui;
 
 import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
+import com.colonygenesis.ui.components.GameControlBar;
+import com.colonygenesis.ui.components.ResourceBar;
+import com.colonygenesis.ui.components.TurnInfoBar;
+import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
+import javafx.scene.layout.*;
 
 import java.util.logging.Logger;
 
 /**
  * Main gameplay screen of the application.
- * Displays the game map and colony information.
+ * Uses modular components to display the game interface.
  */
 public class GameplayScreen extends BorderPane implements IScreenController {
     private static final Logger LOGGER = LoggerUtil.getLogger(GameplayScreen.class);
@@ -28,6 +23,10 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private Game game;
     private MapView mapView;
     private boolean hasShownInitially = false;
+
+    private ResourceBar resourceBar;
+    private TurnInfoBar turnInfoBar;
+    private GameControlBar gameControlBar;
 
     /**
      * Constructs a new gameplay screen for the specified game.
@@ -37,6 +36,9 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     public GameplayScreen(Game game) {
         this.game = game;
         LOGGER.info("Creating gameplay screen for colony: " + game.getColonyName());
+
+        getStyleClass().add(AppTheme.STYLE_SCREEN);
+
         initializeUI();
     }
 
@@ -46,43 +48,42 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private void initializeUI() {
         LOGGER.fine("Initializing GameplayScreen UI");
 
-        Label colonyInfoLabel = new Label(game.getColonyName() + " - " + game.getPlanetType());
-        colonyInfoLabel.setFont(Font.font(20));
-        colonyInfoLabel.setTextFill(Color.WHITE);
-
-        Label turnLabel = new Label("Turn: " + game.getCurrentTurn());
-        turnLabel.setFont(Font.font(16));
-        turnLabel.setTextFill(Color.WHITE);
-
-        Button menuButton = new Button("Menu");
-        menuButton.setStyle("-fx-background-color: #2E5077; -fx-text-fill: white;");
-        menuButton.setOnAction(e -> showMenu());
-
-        HBox headerBox = new HBox();
-        headerBox.setPadding(new Insets(10));
-        headerBox.setAlignment(Pos.CENTER_LEFT);
-
-        HBox colonyInfoBox = new HBox(20);
-        colonyInfoBox.getChildren().addAll(colonyInfoLabel, turnLabel);
-
-        HBox menuButtonBox = new HBox();
-        menuButtonBox.setAlignment(Pos.CENTER_RIGHT);
-        menuButtonBox.getChildren().add(menuButton);
-        HBox.setHgrow(menuButtonBox, Priority.ALWAYS);
-
-        headerBox.getChildren().addAll(colonyInfoBox, menuButtonBox);
+        HBox headerBox = createHeader();
+        headerBox.getStyleClass().add(AppTheme.STYLE_HEADER);
+        setTop(headerBox);
 
         mapView = new MapView();
-        mapView.setPrefSize(800, 600);
+        mapView.getStyleClass().add(AppTheme.STYLE_MAP_VIEW);
+        setCenter(mapView);
 
-        StackPane centerPanel = new StackPane();
-        centerPanel.getChildren().add(mapView);
+        gameControlBar = new GameControlBar(() -> {
+            game.getTurnManager().advancePhase();
+            updateDisplay();
+        });
+        setBottom(gameControlBar);
 
-        setTop(headerBox);
-        setCenter(centerPanel);
-        setStyle("-fx-background-color: #121212;");
+        updateDisplay();
 
         Platform.runLater(() -> mapView.resetView());
+    }
+
+    /**
+     * Creates the header component with resources and menu buttons.
+     *
+     * @return The header HBox
+     */
+    private HBox createHeader() {
+        resourceBar = new ResourceBar();
+
+        turnInfoBar = new TurnInfoBar(this::showMenu);
+
+        HBox headerBox = new HBox();
+
+        headerBox.getChildren().addAll(resourceBar, turnInfoBar);
+
+        HBox.setHgrow(resourceBar, Priority.ALWAYS);
+
+        return headerBox;
     }
 
     /**
@@ -98,6 +99,22 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         }
 
         screenManager.activateScreen(GameState.PAUSE_MENU);
+    }
+
+    /**
+     * Updates the display with current game state.
+     */
+    private void updateDisplay() {
+        turnInfoBar.update(
+                game.getCurrentTurn(),
+                game.getTurnManager().getCurrentPhase()
+        );
+
+        resourceBar.update(
+                game.getResourceManager().getAllResources(),
+                game.getResourceManager().getAllNetProduction(),
+                game.getResourceManager().getAllCapacity()
+        );
     }
 
     @Override
@@ -117,6 +134,7 @@ public class GameplayScreen extends BorderPane implements IScreenController {
             Platform.runLater(() -> mapView.resetView());
             hasShownInitially = true;
         }
+        updateDisplay();
     }
 
     @Override
@@ -125,5 +143,7 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     }
 
     @Override
-    public void update() {}
+    public void update() {
+        updateDisplay();
+    }
 }

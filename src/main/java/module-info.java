@@ -13,4 +13,6 @@ module com.colonygenesis {
     exports com.colonygenesis.core;
     exports com.colonygenesis.ui;
     opens com.colonygenesis.ui to javafx.fxml;
+    exports com.colonygenesis.ui.components;
+    opens com.colonygenesis.ui.components to javafx.fxml;
 }

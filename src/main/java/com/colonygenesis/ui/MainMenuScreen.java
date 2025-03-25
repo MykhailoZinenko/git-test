@@ -1,11 +1,11 @@
 package com.colonygenesis.ui;
 
 import com.colonygenesis.core.GameState;
+import com.colonygenesis.ui.components.ActionButton;
 import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -23,6 +23,7 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
      * Constructs a new main menu screen and initializes the UI components.
      */
     public MainMenuScreen() {
+        getStyleClass().add(AppTheme.STYLE_MENU_SCREEN);
         initializeUI();
     }
 
@@ -35,11 +36,11 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
         Label titleLabel = new Label("Exoplanet: Colony Genesis");
         titleLabel.getStyleClass().add(AppTheme.STYLE_TITLE);
 
-        Button newGameBtn = createMenuButton("New Game");
-        Button loadGameBtn = createMenuButton("Load Game");
-        Button settingsBtn = createMenuButton("Settings");
-        Button exitBtn = createMenuButton("Exit");
-        exitBtn.getStyleClass().add("danger-button");
+        ActionButton newGameBtn = new ActionButton("New Game", ActionButton.ButtonType.MENU);
+        ActionButton loadGameBtn = new ActionButton("Load Game", ActionButton.ButtonType.MENU);
+        ActionButton settingsBtn = new ActionButton("Settings", ActionButton.ButtonType.MENU);
+        ActionButton exitBtn = new ActionButton("Exit", ActionButton.ButtonType.MENU);
+        exitBtn.getStyleClass().add(AppTheme.STYLE_BUTTON_DANGER);
 
         newGameBtn.setOnAction(e -> handleNewGameRequest());
         loadGameBtn.setOnAction(e -> handleLoadGameRequest());
@@ -48,35 +49,10 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
 
         VBox menuBox = new VBox(20);
         menuBox.setAlignment(Pos.CENTER);
+        menuBox.getStyleClass().add(AppTheme.STYLE_MENU_CONTAINER);
         menuBox.getChildren().addAll(titleLabel, newGameBtn, loadGameBtn, settingsBtn, exitBtn);
 
         setCenter(menuBox);
-        setStyle("-fx-background-color: linear-gradient(to bottom, #0d1b2a, #1b263b, #415a77);");
-
-        try {
-            var url = getClass().getResource("/images/space_background.jpg");
-            if (url != null) {
-                setStyle("-fx-background-image: url('" + url.toExternalForm() + "'); " +
-                        "-fx-background-size: cover;");
-                LOGGER.fine("Background image applied successfully");
-            } else {
-                LOGGER.warning("Background image not found, using gradient background");
-            }
-        } catch (Exception e) {
-            LOGGER.log(java.util.logging.Level.WARNING, "Error loading background image", e);
-        }
-    }
-
-    /**
-     * Creates a styled menu button.
-     *
-     * @param text The button text
-     * @return A styled button
-     */
-    private Button createMenuButton(String text) {
-        Button button = new Button(text);
-        button.getStyleClass().add(AppTheme.STYLE_MENU_BUTTON);
-        return button;
     }
 
     /**
@@ -100,6 +76,7 @@ public class MainMenuScreen extends BorderPane implements IScreenController {
      */
     private void handleSettingsRequest() {
         LOGGER.info("Settings requested");
+        ScreenManager.getInstance().activateScreen(GameState.SETTINGS);
     }
 
     /**
