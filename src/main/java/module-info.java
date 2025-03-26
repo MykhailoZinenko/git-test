@@ -8,6 +8,7 @@ module com.colonygenesis {
     requires org.controlsfx.controls;
     requires org.kordamp.bootstrapfx.core;
     requires java.logging;
+    requires java.management;
 
     opens com.colonygenesis.core to javafx.fxml;
     exports com.colonygenesis.core;

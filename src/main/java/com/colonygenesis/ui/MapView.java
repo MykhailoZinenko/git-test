@@ -1,5 +1,7 @@
 package com.colonygenesis.ui;
 
+import com.colonygenesis.ui.debug.DebugOverlay;
+import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -9,11 +11,15 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
+import java.util.logging.Logger;
+
 /**
  * Map view component that displays the game world as a hexagonal grid.
  * Supports panning and zooming functionality.
  */
 public class MapView extends Pane {
+    private static final Logger LOGGER = LoggerUtil.getLogger(MapView.class);
+
     private final Canvas canvas;
     private final GraphicsContext gc;
 
@@ -28,6 +34,11 @@ public class MapView extends Pane {
     private double lastMouseX;
     private double lastMouseY;
     private boolean isDragging = false;
+
+    private long lastRenderTimeNs = 0;
+    private int visibleHexagons = 0;
+    private final int totalHexagons;
+    private DebugOverlay debugOverlay;
 
     /**
      * Constructs a new map view and initializes the UI components.
@@ -48,7 +59,18 @@ public class MapView extends Pane {
         widthProperty().addListener((obs, oldVal, newVal) -> draw());
         heightProperty().addListener((obs, oldVal, newVal) -> draw());
 
+        totalHexagons = mapWidth * mapHeight;
+
         Platform.runLater(this::resetView);
+    }
+
+    /**
+     * Sets the debug overlay to report rendering statistics to.
+     *
+     * @param debugOverlay The debug overlay
+     */
+    public void setDebugOverlay(DebugOverlay debugOverlay) {
+        this.debugOverlay = debugOverlay;
     }
 
     /**
@@ -128,10 +150,16 @@ public class MapView extends Pane {
     }
 
     /**
-     * Draws the map view.
+     * Draws the map view and records rendering statistics.
      */
     public void draw() {
         if (getWidth() <= 0 || getHeight() <= 0) return;
+
+        if (debugOverlay != null) {
+            debugOverlay.recordFrame();
+        }
+
+        long startTime = System.nanoTime();
 
         gc.setFill(Color.rgb(20, 20, 30));
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
@@ -147,6 +175,46 @@ public class MapView extends Pane {
         gc.setStroke(Color.DARKGREY);
         gc.setLineWidth(1);
         gc.strokeRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        lastRenderTimeNs = System.nanoTime() - startTime;
+        updateDebugOverlay();
+    }
+
+    /**
+     * Updates the debug overlay with current rendering statistics.
+     */
+    private void updateDebugOverlay() {
+        if (debugOverlay != null) {
+            double renderTimeMs = lastRenderTimeNs / 1_000_000.0; // Convert ns to ms
+            debugOverlay.setRenderStats(visibleHexagons, totalHexagons, renderTimeMs);
+        }
+    }
+
+    /**
+     * Calculates which grid cells are visible in the current viewport.
+     *
+     * @return A Viewport object containing the visible grid range
+     */
+    private Viewport calculateVisibleCells() {
+        double viewportLeft = -translateX / scale;
+        double viewportTop = -translateY / scale;
+        double viewportRight = (canvas.getWidth() - translateX) / scale;
+        double viewportBottom = (canvas.getHeight() - translateY) / scale;
+
+        viewportLeft -= hexSize * 2;
+        viewportTop -= hexSize * 2;
+        viewportRight += hexSize * 2;
+        viewportBottom += hexSize * 2;
+
+        double hexWidth = hexSize * 1.5;
+        double hexHeight = hexSize * Math.sqrt(3);
+
+        int startX = Math.max(0, (int)(viewportLeft / hexWidth));
+        int startY = Math.max(0, (int)(viewportTop / hexHeight));
+        int endX = Math.min(mapWidth - 1, (int)(viewportRight / hexWidth));
+        int endY = Math.min(mapHeight - 1, (int)(viewportBottom / hexHeight));
+
+        return new Viewport(startX, startY, endX, endY);
     }
 
     /**
@@ -159,14 +227,15 @@ public class MapView extends Pane {
         gc.setFill(Color.rgb(30, 30, 40, 0.3));
         gc.fillRect(0, 0, width, height);
 
-        for (int x = 0; x < mapWidth; x++) {
-            for (int y = 0; y < mapHeight; y++) {
+        Viewport viewport = calculateVisibleCells();
+        visibleHexagons = 0;
+
+        for (int x = viewport.startX; x <= viewport.endX; x++) {
+            for (int y = viewport.startY; y <= viewport.endY; y++) {
                 drawHexagon(x, y);
+                visibleHexagons++;
             }
         }
-
-        gc.setFill(Color.WHITE);
-        gc.fillText("Map Size: " + mapWidth + "x" + mapHeight, 10, 20);
     }
 
     /**
@@ -235,5 +304,49 @@ public class MapView extends Pane {
     public void resize(double width, double height) {
         super.resize(width, height);
         draw();
+    }
+
+    /**
+     * Gets the current render time in milliseconds.
+     *
+     * @return The render time of the last frame
+     */
+    public double getRenderTimeMs() {
+        return lastRenderTimeNs / 1_000_000.0;
+    }
+
+    /**
+     * Gets the number of visible hexagons.
+     *
+     * @return The number of hexagons rendered in the last frame
+     */
+    public int getVisibleHexagons() {
+        return visibleHexagons;
+    }
+
+    /**
+     * Gets the total number of hexagons in the map.
+     *
+     * @return The total number of hexagons
+     */
+    public int getTotalHexagons() {
+        return totalHexagons;
+    }
+
+    /**
+     * A class to represent the visible region in the grid.
+     */
+    private static class Viewport {
+        final int startX;
+        final int startY;
+        final int endX;
+        final int endY;
+
+        Viewport(int startX, int startY, int endX, int endY) {
+            this.startX = startX;
+            this.startY = startY;
+            this.endX = endX;
+            this.endY = endY;
+        }
     }
 }

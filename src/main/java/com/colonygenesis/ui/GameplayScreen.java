@@ -5,10 +5,17 @@ import com.colonygenesis.core.GameState;
 import com.colonygenesis.ui.components.GameControlBar;
 import com.colonygenesis.ui.components.ResourceBar;
 import com.colonygenesis.ui.components.TurnInfoBar;
+import com.colonygenesis.ui.debug.DebugOverlay;
 import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 
 import java.util.logging.Logger;
@@ -28,6 +35,9 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private TurnInfoBar turnInfoBar;
     private GameControlBar gameControlBar;
 
+    private DebugOverlay debugOverlay;
+    private final KeyCombination debugToggleKey = new KeyCodeCombination(KeyCode.F3);
+
     /**
      * Constructs a new gameplay screen for the specified game.
      *
@@ -40,6 +50,8 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         getStyleClass().add(AppTheme.STYLE_SCREEN);
 
         initializeUI();
+        setupDebugOverlay();
+        setupKeyboardShortcuts();
     }
 
     /**
@@ -65,6 +77,51 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         updateDisplay();
 
         Platform.runLater(() -> mapView.resetView());
+    }
+
+    /**
+     * Sets up and configures the debug overlay.
+     */
+    private void setupDebugOverlay() {
+        debugOverlay = new DebugOverlay(game);
+
+        // Set initial state (off by default)
+        debugOverlay.setActive(false);
+
+        // Connect to MapView for rendering statistics
+        mapView.setDebugOverlay(debugOverlay);
+
+        // Position in the top-right corner
+        StackPane.setAlignment(debugOverlay, Pos.TOP_RIGHT);
+        StackPane.setMargin(debugOverlay, new Insets(10));
+
+        // Add to a stack pane over the map view
+        StackPane mapStack = new StackPane();
+        mapStack.getChildren().addAll(mapView, debugOverlay);
+        setCenter(mapStack);
+
+        LOGGER.fine("Debug overlay configured");
+    }
+
+    /**
+     * Sets up keyboard shortcuts.
+     */
+    private void setupKeyboardShortcuts() {
+        Platform.runLater(this::requestFocus);
+        addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (debugToggleKey.match(event)) {
+                toggleDebugOverlay();
+                event.consume();
+            }
+        });
+    }
+
+    /**
+     * Toggles the debug overlay visibility.
+     */
+    private void toggleDebugOverlay() {
+        boolean isActive = debugOverlay.toggleActive();
+        LOGGER.info("Debug overlay " + (isActive ? "enabled" : "disabled"));
     }
 
     /**
@@ -115,6 +172,12 @@ public class GameplayScreen extends BorderPane implements IScreenController {
                 game.getResourceManager().getAllNetProduction(),
                 game.getResourceManager().getAllCapacity()
         );
+
+        if (debugOverlay != null && debugOverlay.isVisible()) {
+            int buildingCount = 0; // TODO: Get from building manager
+            int otherEntities = 0; // TODO: Get from entity manager
+            debugOverlay.setEntityCounts(buildingCount, otherEntities);
+        }
     }
 
     @Override
@@ -135,6 +198,8 @@ public class GameplayScreen extends BorderPane implements IScreenController {
             hasShownInitially = true;
         }
         updateDisplay();
+
+        Platform.runLater(this::requestFocus);
     }
 
     @Override
@@ -145,5 +210,14 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     @Override
     public void update() {
         updateDisplay();
+    }
+
+    /**
+     * Cleans up resources when the screen is no longer needed.
+     */
+    public void dispose() {
+        if (debugOverlay != null) {
+            debugOverlay.dispose();
+        }
     }
 }
