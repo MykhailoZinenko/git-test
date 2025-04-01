@@ -1,5 +1,6 @@
 package com.colonygenesis.core;
 
+import com.colonygenesis.map.Planet;
 import com.colonygenesis.map.PlanetType;
 import com.colonygenesis.resource.ResourceManager;
 import com.colonygenesis.util.LoggerUtil;
@@ -36,6 +37,7 @@ public class Game implements Serializable {
 
     private ResourceManager resourceManager;
     private TurnManager turnManager;
+    private Planet planet;
 
     /**
      * Constructs a new game instance.
@@ -62,6 +64,8 @@ public class Game implements Serializable {
 
         this.resourceManager = new ResourceManager(this);
         this.turnManager = new TurnManager(this);
+
+        this.planet = new Planet(this, colonyName + " Prime", planetType, mapSize);
 
         this.initialized = true;
 
@@ -235,6 +239,15 @@ public class Game implements Serializable {
      */
     public TurnManager getTurnManager() {
         return turnManager;
+    }
+
+    /**
+     * Gets the planet.
+     *
+     * @return The planet
+     */
+    public Planet getPlanet() {
+        return planet;
     }
 
     /**

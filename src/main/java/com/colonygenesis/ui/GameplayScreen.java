@@ -2,16 +2,23 @@ package com.colonygenesis.ui;
 
 import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
+import com.colonygenesis.map.Tile;
 import com.colonygenesis.ui.components.GameControlBar;
 import com.colonygenesis.ui.components.ResourceBar;
+import com.colonygenesis.ui.components.TileInfoPanel;
 import com.colonygenesis.ui.components.TurnInfoBar;
 import com.colonygenesis.ui.debug.DebugOverlay;
+import com.colonygenesis.ui.events.EventBus;
+import com.colonygenesis.ui.events.TileEvents;
 import com.colonygenesis.ui.styling.AppTheme;
+import com.colonygenesis.util.DialogUtil;
 import com.colonygenesis.util.LoggerUtil;
+import com.colonygenesis.util.Result;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -34,9 +41,12 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private ResourceBar resourceBar;
     private TurnInfoBar turnInfoBar;
     private GameControlBar gameControlBar;
+    private Label planetInfoLabel;
+    private TileInfoPanel tileInfoPanel;
 
     private DebugOverlay debugOverlay;
     private final KeyCombination debugToggleKey = new KeyCodeCombination(KeyCode.F3);
+    private final EventBus eventBus = EventBus.getInstance();
 
     /**
      * Constructs a new gameplay screen for the specified game.
@@ -48,6 +58,9 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         LOGGER.info("Creating gameplay screen for colony: " + game.getColonyName());
 
         getStyleClass().add(AppTheme.STYLE_SCREEN);
+
+        eventBus.subscribe(TileEvents.TileSelectedEvent.class, this::handleTileSelected);
+        eventBus.subscribe(TileEvents.ColonizeTileEvent.class, this::handleColonizeTile);
 
         initializeUI();
         setupDebugOverlay();
@@ -65,8 +78,17 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         setTop(headerBox);
 
         mapView = new MapView();
+        mapView.setGrid(game.getPlanet().getGrid());
         mapView.getStyleClass().add(AppTheme.STYLE_MAP_VIEW);
-        setCenter(mapView);
+
+        tileInfoPanel = new TileInfoPanel();
+        tileInfoPanel.setMaxWidth(300);
+
+        HBox contentBox = new HBox();
+        HBox.setHgrow(mapView, Priority.ALWAYS);
+        contentBox.getChildren().addAll(mapView, tileInfoPanel);
+
+        setCenter(contentBox);
 
         gameControlBar = new GameControlBar(() -> {
             game.getTurnManager().advancePhase();
@@ -85,20 +107,22 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private void setupDebugOverlay() {
         debugOverlay = new DebugOverlay(game);
 
-        // Set initial state (off by default)
         debugOverlay.setActive(false);
 
-        // Connect to MapView for rendering statistics
         mapView.setDebugOverlay(debugOverlay);
 
-        // Position in the top-right corner
         StackPane.setAlignment(debugOverlay, Pos.TOP_RIGHT);
         StackPane.setMargin(debugOverlay, new Insets(10));
 
-        // Add to a stack pane over the map view
         StackPane mapStack = new StackPane();
-        mapStack.getChildren().addAll(mapView, debugOverlay);
-        setCenter(mapStack);
+        mapStack.getChildren().add(mapView);
+        mapStack.getChildren().add(debugOverlay);
+
+        HBox contentBox = new HBox();
+        HBox.setHgrow(mapStack, Priority.ALWAYS);
+        contentBox.getChildren().addAll(mapStack, tileInfoPanel);
+
+        setCenter(contentBox);
 
         LOGGER.fine("Debug overlay configured");
     }
@@ -111,6 +135,9 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (debugToggleKey.match(event)) {
                 toggleDebugOverlay();
+                event.consume();
+            } else if (event.getCode() == KeyCode.ESCAPE) {
+                showMenu();
                 event.consume();
             }
         });
@@ -132,11 +159,17 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private HBox createHeader() {
         resourceBar = new ResourceBar();
 
+        planetInfoLabel = new Label();
+        planetInfoLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
+        HBox.setMargin(planetInfoLabel, new Insets(0, 20, 0, 10));
+
         turnInfoBar = new TurnInfoBar(this::showMenu);
 
         HBox headerBox = new HBox();
+        headerBox.setSpacing(10);
+        headerBox.setAlignment(Pos.CENTER_LEFT);
 
-        headerBox.getChildren().addAll(resourceBar, turnInfoBar);
+        headerBox.getChildren().addAll(resourceBar, planetInfoLabel, turnInfoBar);
 
         HBox.setHgrow(resourceBar, Priority.ALWAYS);
 
@@ -173,10 +206,46 @@ public class GameplayScreen extends BorderPane implements IScreenController {
                 game.getResourceManager().getAllCapacity()
         );
 
+        String planetInfo = game.getPlanet().getName() + " (" + game.getPlanet().getType().getName() + ")";
+        planetInfoLabel.setText(planetInfo);
+
         if (debugOverlay != null && debugOverlay.isVisible()) {
             int buildingCount = 0; // TODO: Get from building manager
             int otherEntities = 0; // TODO: Get from entity manager
             debugOverlay.setEntityCounts(buildingCount, otherEntities);
+        }
+
+        eventBus.publish(new TileEvents.RefreshMapEvent());
+    }
+
+    /**
+     * Handles tile selection events.
+     * Updates the tile info panel with information about the selected tile.
+     */
+    private void handleTileSelected(TileEvents.TileSelectedEvent event) {
+        Tile tile = event.getTile();
+        if (tile != null) {
+            tileInfoPanel.setColonizationCost(game.getPlanet().getColonizationCost(tile.getX(), tile.getY()));
+        }
+    }
+
+    /**
+     * Handles colonize tile events.
+     * Attempts to colonize the specified tile and updates the UI accordingly.
+     */
+    private void handleColonizeTile(TileEvents.ColonizeTileEvent event) {
+        Tile tile = event.getTile();
+        if (tile == null) return;
+
+        Result<Boolean> result = game.getPlanet().colonizeTile(tile.getX(), tile.getY());
+        if (result.isFailure()) {
+            DialogUtil.showMessageDialog("Cannot Colonize", result.getErrorMessage());
+        } else {
+            Tile updatedTile = game.getPlanet().getGrid().getTileAt(tile.getX(), tile.getY());
+
+            eventBus.publish(new TileEvents.TileUpdatedEvent(updatedTile));
+
+            updateDisplay();
         }
     }
 
@@ -216,6 +285,8 @@ public class GameplayScreen extends BorderPane implements IScreenController {
      * Cleans up resources when the screen is no longer needed.
      */
     public void dispose() {
+        eventBus.clear();
+
         if (debugOverlay != null) {
             debugOverlay.dispose();
         }

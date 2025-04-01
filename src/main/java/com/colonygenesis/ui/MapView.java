@@ -1,6 +1,11 @@
 package com.colonygenesis.ui;
 
+import com.colonygenesis.map.HexGrid;
+import com.colonygenesis.map.TerrainType;
+import com.colonygenesis.map.Tile;
 import com.colonygenesis.ui.debug.DebugOverlay;
+import com.colonygenesis.ui.events.EventBus;
+import com.colonygenesis.ui.events.TileEvents;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
@@ -10,6 +15,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.TextAlignment;
 
 import java.util.logging.Logger;
 
@@ -22,9 +28,9 @@ public class MapView extends Pane {
 
     private final Canvas canvas;
     private final GraphicsContext gc;
+    private HexGrid grid;
+    private final EventBus eventBus = EventBus.getInstance();
 
-    private final int mapWidth = 30;
-    private final int mapHeight = 20;
     private final double hexSize = 30.0;
 
     private double translateX = 0;
@@ -37,8 +43,11 @@ public class MapView extends Pane {
 
     private long lastRenderTimeNs = 0;
     private int visibleHexagons = 0;
-    private final int totalHexagons;
+    private int totalHexagons = 0;
     private DebugOverlay debugOverlay;
+
+    private Tile selectedTile = null;
+    private Tile hoveredTile = null;
 
     /**
      * Constructs a new map view and initializes the UI components.
@@ -54,29 +63,50 @@ public class MapView extends Pane {
         setOnMousePressed(this::handleMousePressed);
         setOnMouseDragged(this::handleMouseDragged);
         setOnMouseReleased(this::handleMouseReleased);
+        setOnMouseMoved(this::handleMouseMoved);
+        setOnMouseClicked(this::handleMouseClicked);
         setOnScroll(this::handleScroll);
 
         widthProperty().addListener((obs, oldVal, newVal) -> draw());
         heightProperty().addListener((obs, oldVal, newVal) -> draw());
 
-        totalHexagons = mapWidth * mapHeight;
+        eventBus.subscribe(TileEvents.TileUpdatedEvent.class, event -> {
+            if (event.getTile() == selectedTile) {
+                draw();
+            }
+        });
 
-        Platform.runLater(this::resetView);
+        eventBus.subscribe(TileEvents.RefreshMapEvent.class, event -> draw());
+    }
+
+    /**
+     * Sets the hex grid to display.
+     */
+    public void setGrid(HexGrid grid) {
+        this.grid = grid;
+        if (grid != null) {
+            totalHexagons = grid.getWidth() * grid.getHeight();
+        }
+        draw();
     }
 
     /**
      * Sets the debug overlay to report rendering statistics to.
-     *
-     * @param debugOverlay The debug overlay
      */
     public void setDebugOverlay(DebugOverlay debugOverlay) {
         this.debugOverlay = debugOverlay;
     }
 
     /**
+     * Sets the selected tile and redraws the map.
+     */
+    public void setSelectedTile(Tile tile) {
+        this.selectedTile = tile;
+        draw();
+    }
+
+    /**
      * Handles mouse press events.
-     *
-     * @param event The mouse event
      */
     private void handleMousePressed(MouseEvent event) {
         if (event.getButton() == MouseButton.PRIMARY) {
@@ -88,8 +118,6 @@ public class MapView extends Pane {
 
     /**
      * Handles mouse drag events.
-     *
-     * @param event The mouse event
      */
     private void handleMouseDragged(MouseEvent event) {
         if (isDragging) {
@@ -108,17 +136,86 @@ public class MapView extends Pane {
 
     /**
      * Handles mouse release events.
-     *
-     * @param event The mouse event
      */
     private void handleMouseReleased(MouseEvent event) {
         isDragging = false;
     }
 
     /**
+     * Handles mouse moved events for hover effect.
+     */
+    private void handleMouseMoved(MouseEvent event) {
+        if (grid == null) return;
+
+        double mouseX = event.getX();
+        double mouseY = event.getY();
+
+        Tile tile = getTileAtScreenPosition(mouseX, mouseY);
+
+        if (tile != null && tile.isRevealed()) {
+            if (hoveredTile != tile) {
+                hoveredTile = tile;
+                draw();
+            }
+        } else if (hoveredTile != null) {
+            hoveredTile = null;
+            draw();
+        }
+    }
+
+    /**
+     * Handles mouse click events for tile selection.
+     */
+    private void handleMouseClicked(MouseEvent event) {
+        if (grid == null || isDragging) return;
+
+        if (event.getButton() == MouseButton.PRIMARY) {
+            double mouseX = event.getX();
+            double mouseY = event.getY();
+
+            Tile tile = getTileAtScreenPosition(mouseX, mouseY);
+
+            if (tile != null && tile.isRevealed()) {
+                selectedTile = tile;
+                draw();
+
+                eventBus.publish(new TileEvents.TileSelectedEvent(tile));
+            }
+        }
+    }
+
+    /**
+     * Converts screen coordinates to grid coordinates and returns the tile.
+     */
+    private Tile getTileAtScreenPosition(double screenX, double screenY) {
+        if (grid == null) return null;
+
+        double worldX = (screenX - translateX) / scale;
+        double worldY = (screenY - translateY) / scale;
+
+        double hexHeight = hexSize * Math.sqrt(3);
+
+        for (int x = 0; x < grid.getWidth(); x++) {
+            for (int y = 0; y < grid.getHeight(); y++) {
+                double centerX = x * hexSize * 1.5;
+                double centerY = y * hexHeight;
+
+                if (x % 2 == 1) {
+                    centerY += hexHeight / 2;
+                }
+
+                double distance = Math.sqrt(Math.pow(worldX - centerX, 2) + Math.pow(worldY - centerY, 2));
+                if (distance <= hexSize) {
+                    return grid.getTileAt(x, y);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Handles scroll events for zooming.
-     *
-     * @param event The scroll event
      */
     private void handleScroll(ScrollEvent event) {
         double mouseX = event.getX();
@@ -153,7 +250,7 @@ public class MapView extends Pane {
      * Draws the map view and records rendering statistics.
      */
     public void draw() {
-        if (getWidth() <= 0 || getHeight() <= 0) return;
+        if (getWidth() <= 0 || getHeight() <= 0 || grid == null) return;
 
         if (debugOverlay != null) {
             debugOverlay.recordFrame();
@@ -191,60 +288,33 @@ public class MapView extends Pane {
     }
 
     /**
-     * Calculates which grid cells are visible in the current viewport.
-     *
-     * @return A Viewport object containing the visible grid range
-     */
-    private Viewport calculateVisibleCells() {
-        double viewportLeft = -translateX / scale;
-        double viewportTop = -translateY / scale;
-        double viewportRight = (canvas.getWidth() - translateX) / scale;
-        double viewportBottom = (canvas.getHeight() - translateY) / scale;
-
-        viewportLeft -= hexSize * 2;
-        viewportTop -= hexSize * 2;
-        viewportRight += hexSize * 2;
-        viewportBottom += hexSize * 2;
-
-        double hexWidth = hexSize * 1.5;
-        double hexHeight = hexSize * Math.sqrt(3);
-
-        int startX = Math.max(0, (int)(viewportLeft / hexWidth));
-        int startY = Math.max(0, (int)(viewportTop / hexHeight));
-        int endX = Math.min(mapWidth - 1, (int)(viewportRight / hexWidth));
-        int endY = Math.min(mapHeight - 1, (int)(viewportBottom / hexHeight));
-
-        return new Viewport(startX, startY, endX, endY);
-    }
-
-    /**
      * Draws the hexagonal grid.
      */
     private void drawHexGrid() {
-        double width = mapWidth * hexSize * 1.5;
-        double height = mapHeight * hexSize * Math.sqrt(3);
+        int width = grid.getWidth();
+        int height = grid.getHeight();
 
-        gc.setFill(Color.rgb(30, 30, 40, 0.3));
-        gc.fillRect(0, 0, width, height);
-
-        Viewport viewport = calculateVisibleCells();
         visibleHexagons = 0;
 
-        for (int x = viewport.startX; x <= viewport.endX; x++) {
-            for (int y = viewport.startY; y <= viewport.endY; y++) {
-                drawHexagon(x, y);
-                visibleHexagons++;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Tile tile = grid.getTileAt(x, y);
+                if (tile != null) {
+                    drawHexagon(tile);
+                    visibleHexagons++;
+                }
             }
         }
     }
 
     /**
-     * Draws a hexagon at the specified grid coordinates.
-     *
-     * @param gridX The grid x coordinate
-     * @param gridY The grid y coordinate
+     * Draws a hexagon for the specified tile.
      */
-    private void drawHexagon(int gridX, int gridY) {
+    private void drawHexagon(Tile tile) {
+        int gridX = tile.getX();
+        int gridY = tile.getY();
+        TerrainType terrainType = tile.getTerrainType();
+
         double centerX = gridX * hexSize * 1.5;
         double centerY = gridY * hexSize * Math.sqrt(3);
 
@@ -261,9 +331,27 @@ public class MapView extends Pane {
             yPoints[i] = centerY + hexSize * Math.sin(angle);
         }
 
-        gc.setFill(Color.rgb(50, 50, 70));
-        gc.setStroke(Color.rgb(80, 80, 100));
-        gc.setLineWidth(1);
+        if (!tile.isRevealed()) {
+            gc.setFill(Color.rgb(10, 10, 15, 0.9));
+            gc.setStroke(Color.rgb(30, 30, 40));
+            gc.setLineWidth(1);
+        } else {
+            gc.setFill(terrainType.getColor());
+
+            if (tile == selectedTile) {
+                gc.setStroke(Color.WHITE);
+                gc.setLineWidth(2);
+            } else if (tile == hoveredTile) {
+                gc.setStroke(Color.YELLOW);
+                gc.setLineWidth(1.5);
+            } else if (tile.isColonized()) {
+                gc.setStroke(Color.LIGHTGREEN);
+                gc.setLineWidth(1.5);
+            } else {
+                gc.setStroke(Color.rgb(80, 80, 100));
+                gc.setLineWidth(1);
+            }
+        }
 
         gc.beginPath();
         gc.moveTo(xPoints[0], yPoints[0]);
@@ -276,9 +364,15 @@ public class MapView extends Pane {
         gc.fill();
         gc.stroke();
 
-        if (scale > 1.5) {
+        if (tile.isRevealed() && tile.isColonized()) {
+            gc.setFill(Color.rgb(255, 255, 255, 0.7));
+            gc.fillOval(centerX - hexSize/4, centerY - hexSize/4, hexSize/2, hexSize/2);
+        }
+
+        if (scale > 1.5 && tile.isRevealed()) {
             gc.setFill(Color.WHITE);
-            gc.fillText(gridX + "," + gridY, centerX - 10, centerY + 5);
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText(gridX + "," + gridY, centerX, centerY);
         }
     }
 
@@ -286,67 +380,31 @@ public class MapView extends Pane {
      * Resets the view to center the map and reset zoom.
      */
     public void resetView() {
-        translateX = getWidth() / 2 - (mapWidth * hexSize * 1.5) / 2;
-        translateY = getHeight() / 2 - (mapHeight * hexSize * Math.sqrt(3)) / 2;
+        if (grid == null) return;
+
+        int centerX = grid.getWidth() / 2;
+        int centerY = grid.getHeight() / 2;
+
+        double centerHexX = centerX * hexSize * 1.5;
+        double centerHexY = centerY * hexSize * Math.sqrt(3);
+
+        if (centerX % 2 == 1) {
+            centerHexY += hexSize * Math.sqrt(3) / 2;
+        }
+
+        translateX = getWidth() / 2 - centerHexX * scale;
+        translateY = getHeight() / 2 - centerHexY * scale;
+
         scale = 1.0;
         draw();
     }
 
     /**
      * Handles resizing of the view.
-     * Overrides the resize method of the parent but doesn't attempt to
-     * directly set canvas dimensions since they're bound in the constructor.
-     *
-     * @param width The new width
-     * @param height The new height
      */
     @Override
     public void resize(double width, double height) {
         super.resize(width, height);
         draw();
-    }
-
-    /**
-     * Gets the current render time in milliseconds.
-     *
-     * @return The render time of the last frame
-     */
-    public double getRenderTimeMs() {
-        return lastRenderTimeNs / 1_000_000.0;
-    }
-
-    /**
-     * Gets the number of visible hexagons.
-     *
-     * @return The number of hexagons rendered in the last frame
-     */
-    public int getVisibleHexagons() {
-        return visibleHexagons;
-    }
-
-    /**
-     * Gets the total number of hexagons in the map.
-     *
-     * @return The total number of hexagons
-     */
-    public int getTotalHexagons() {
-        return totalHexagons;
-    }
-
-    /**
-     * A class to represent the visible region in the grid.
-     */
-    private static class Viewport {
-        final int startX;
-        final int startY;
-        final int endX;
-        final int endY;
-
-        Viewport(int startX, int startY, int endX, int endY) {
-            this.startX = startX;
-            this.startY = startY;
-            this.endX = endX;
-            this.endY = endY;
-        }
     }
 }

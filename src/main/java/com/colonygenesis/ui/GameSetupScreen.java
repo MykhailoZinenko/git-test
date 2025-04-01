@@ -23,6 +23,8 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
     private TextField colonyNameField;
     private ComboBox<PlanetType> planetTypeComboBox;
     private TextArea planetDescription;
+    private Slider mapSizeSlider;
+    private Label mapSizeLabel;
 
     /**
      * Constructs a new game setup screen and initializes the UI components.
@@ -68,6 +70,24 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
         planetTypeComboBox.setValue(PlanetType.TEMPERATE);
         planetTypeComboBox.setPrefWidth(300);
 
+        Label mapSizeTitle = new Label("Map Size:");
+        mapSizeTitle.getStyleClass().add(AppTheme.STYLE_LABEL);
+
+        mapSizeSlider = new Slider(20, 50, 30);
+        mapSizeSlider.setShowTickMarks(true);
+        mapSizeSlider.setShowTickLabels(true);
+        mapSizeSlider.setMajorTickUnit(10);
+        mapSizeSlider.setMinorTickCount(1);
+        mapSizeSlider.setSnapToTicks(true);
+        mapSizeSlider.setPrefWidth(200);
+
+        mapSizeLabel = new Label("30 x 30");
+        mapSizeLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
+
+        HBox mapSizeBox = new HBox(10);
+        mapSizeBox.setAlignment(Pos.CENTER_LEFT);
+        mapSizeBox.getChildren().addAll(mapSizeSlider, mapSizeLabel);
+
         Label descriptionLabel = new Label("Description:");
         descriptionLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
 
@@ -78,18 +98,28 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
         planetDescription.setPrefWidth(300);
         planetDescription.getStyleClass().add(AppTheme.STYLE_TEXT_FIELD);
 
-        planetTypeComboBox.setOnAction(e ->
-                planetDescription.setText(planetTypeComboBox.getValue().getDescription())
-        );
+        planetTypeComboBox.setOnAction(e -> {
+            PlanetType selectedType = planetTypeComboBox.getValue();
+            if (selectedType != null) {
+                updatePlanetDescription(selectedType);
+            }
+        });
 
-        planetDescription.setText(planetTypeComboBox.getValue().getDescription());
+        mapSizeSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            int size = newVal.intValue();
+            mapSizeLabel.setText(size + " x " + size);
+        });
+
+        updatePlanetDescription(planetTypeComboBox.getValue());
 
         setupGrid.add(nameLabel, 0, 0);
         setupGrid.add(colonyNameField, 1, 0);
         setupGrid.add(planetTypeLabel, 0, 1);
         setupGrid.add(planetTypeComboBox, 1, 1);
-        setupGrid.add(descriptionLabel, 0, 2);
-        setupGrid.add(planetDescription, 1, 2);
+        setupGrid.add(mapSizeTitle, 0, 2);
+        setupGrid.add(mapSizeBox, 1, 2);
+        setupGrid.add(descriptionLabel, 0, 3);
+        setupGrid.add(planetDescription, 1, 3);
 
         Button backButton = new Button("Back");
         backButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_PRIMARY);
@@ -109,16 +139,40 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
     }
 
     /**
+     * Updates the planet description based on the selected planet type.
+     *
+     * @param planetType The selected planet type
+     */
+    private void updatePlanetDescription(PlanetType planetType) {
+        if (planetType == null) return;
+
+        StringBuilder description = new StringBuilder(planetType.getDescription());
+        description.append("\n\nTerrain Distribution:");
+
+        PlanetType.TerrainDistribution distribution = planetType.getTerrainDistribution();
+
+        distribution.getDistribution().forEach((terrainType, probability) -> {
+            description.append("\n- ").append(terrainType.getName())
+                    .append(": ").append(String.format("%.0f%%", probability * 100));
+        });
+
+        planetDescription.setText(description.toString());
+    }
+
+    /**
      * Starts a new game with the configured settings and transitions to the gameplay screen.
      */
     private void startNewGame() {
         String colonyName = colonyNameField.getText();
         PlanetType planetType = planetTypeComboBox.getValue();
+        int mapSize = (int) mapSizeSlider.getValue();
 
-        LOGGER.info("Starting new game with colony: " + colonyName + ", planet type: " + planetType);
+        LOGGER.info("Starting new game with colony: " + colonyName +
+                ", planet type: " + planetType +
+                ", map size: " + mapSize);
 
         Game game = new Game();
-        game.initialize(colonyName, planetType, 30);
+        game.initialize(colonyName, planetType, mapSize);
         game.start();
 
         GameplayScreen gameplayScreen = new GameplayScreen(game);
@@ -141,6 +195,7 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
         LOGGER.fine("GameSetupScreen shown");
         colonyNameField.setText("New Colony");
         planetTypeComboBox.setValue(PlanetType.TEMPERATE);
+        mapSizeSlider.setValue(30);
     }
 
     @Override
