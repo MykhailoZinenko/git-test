@@ -1,5 +1,6 @@
 package com.colonygenesis.ui;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.scene.Scene;
@@ -168,5 +169,17 @@ public class ScreenManager {
      */
     public Stage getPrimaryStage() {
         return primaryStage;
+    }
+
+    /**
+     * Gets the current game instance.
+     *
+     * @return The current game, or null if not in gameplay
+     */
+    public Game getGame() {
+        if (getCurrentGameState() == GameState.GAMEPLAY && getCurrentScreen() instanceof GameplayScreen) {
+            return ((GameplayScreen) getCurrentScreen()).getGame();
+        }
+        return null;
     }
 }

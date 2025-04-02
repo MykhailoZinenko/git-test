@@ -1,6 +1,9 @@
 package com.colonygenesis.core;
 
+import com.colonygenesis.ui.events.EventBus;
+import com.colonygenesis.ui.events.TurnEvents;
 import com.colonygenesis.util.LoggerUtil;
+import com.colonygenesis.util.Result;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -20,6 +23,9 @@ public class TurnManager implements Serializable {
     private TurnPhase currentPhase;
     private boolean phaseCompleted;
 
+    // Event bus for publishing events
+    private final transient EventBus eventBus;
+
     /**
      * Constructs a turn manager for the specified game.
      *
@@ -30,6 +36,7 @@ public class TurnManager implements Serializable {
         this.turnNumber = 1;
         this.currentPhase = TurnPhase.PLANNING;
         this.phaseCompleted = false;
+        this.eventBus = EventBus.getInstance();
 
         LOGGER.info("TurnManager initialized at turn 1, phase: PLANNING");
     }
@@ -40,22 +47,32 @@ public class TurnManager implements Serializable {
      */
     public void advanceTurn() {
         int previousTurn = turnNumber;
+        TurnPhase previousPhase = currentPhase;
+
         turnNumber++;
         currentPhase = TurnPhase.PLANNING;
         phaseCompleted = false;
 
         LOGGER.info("Starting turn " + turnNumber);
         game.setCurrentTurn(turnNumber);
+
+        // Publish turn advanced event
+        eventBus.publish(new TurnEvents.TurnAdvancedEvent(turnNumber, previousTurn));
+
+        // Publish phase changed event
+        eventBus.publish(new TurnEvents.PhaseChangedEvent(currentPhase, previousPhase, turnNumber));
     }
 
     /**
      * Advances to the next phase in the current turn.
      * If the current phase requires input and is not completed, the advancement is blocked.
+     *
+     * @return A Result containing the new phase if successful, or an error message if failed
      */
-    public void advancePhase() {
+    public Result<TurnPhase> advancePhase() {
         if (currentPhase.requiresInput() && !phaseCompleted) {
             LOGGER.warning("Attempting to advance from " + currentPhase.getName() + " which was not completed");
-            // Allow advancement in development for testing
+            return Result.failure("Phase " + currentPhase.getName() + " is not completed");
         }
 
         int ordinal = currentPhase.ordinal();
@@ -67,9 +84,18 @@ public class TurnManager implements Serializable {
 
         LOGGER.info("Phase changed to: " + currentPhase.getName());
 
-        if (!currentPhase.requiresInput()) {
+        // Publish phase changed event
+        eventBus.publish(new TurnEvents.PhaseChangedEvent(currentPhase, previousPhase, turnNumber));
+
+        if (currentPhase == TurnPhase.END_TURN) {
+            // If this is the end turn phase, automatically advance to the next turn
+            advanceTurn();
+        } else if (!currentPhase.requiresInput()) {
+            // If the new phase doesn't require input, execute it automatically
             executeCurrentPhase();
         }
+
+        return Result.success(currentPhase);
     }
 
     /**
@@ -88,12 +114,16 @@ public class TurnManager implements Serializable {
             case BUILDING:
                 // Process construction progress
                 LOGGER.info("Processing building construction");
+                game.getBuildingManager().processTurn();
                 break;
 
             case PRODUCTION:
                 // Execute production phase logic
                 LOGGER.info("Processing resource production/consumption");
                 game.getResourceManager().processTurn();
+
+                // Process colony population growth
+                game.getColonyManager().processTurn();
                 break;
 
             case EVENTS:
@@ -102,9 +132,7 @@ public class TurnManager implements Serializable {
                 break;
 
             case END_TURN:
-                // Execute end turn logic
-                LOGGER.info("Ending turn");
-                advanceTurn();
+                // End turn is handled in advancePhase
                 break;
         }
 

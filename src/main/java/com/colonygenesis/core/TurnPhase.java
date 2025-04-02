@@ -15,7 +15,7 @@ public enum TurnPhase implements Serializable {
     /**
      * Building phase where construction and upgrades are processed.
      */
-    BUILDING("Building", "Construct and upgrade buildings", true),
+    BUILDING("Building", "Construct and upgrade buildings", false),
 
     /**
      * Production phase where resources are produced and consumed.

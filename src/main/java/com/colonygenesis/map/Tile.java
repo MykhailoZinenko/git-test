@@ -1,5 +1,6 @@
 package com.colonygenesis.map;
 
+import com.colonygenesis.building.AbstractBuilding;
 import com.colonygenesis.resource.ResourceType;
 import java.io.Serial;
 import java.io.Serializable;
@@ -17,6 +18,7 @@ public class Tile implements Serializable {
     private TerrainType terrain;
     private boolean colonized;
     private boolean revealed;
+    private AbstractBuilding building;  // Reference to the building on this tile
 
     public Tile(int x, int y, TerrainType terrain) {
         this.x = x;
@@ -24,6 +26,7 @@ public class Tile implements Serializable {
         this.terrain = terrain;
         this.colonized = false;
         this.revealed = false;
+        this.building = null;
     }
 
     public int getX() {
@@ -64,6 +67,51 @@ public class Tile implements Serializable {
 
     public boolean isHabitable() {
         return terrain != TerrainType.WATER && terrain != TerrainType.VOLCANIC;
+    }
+
+    /**
+     * Gets the building on this tile.
+     *
+     * @return The building on this tile, or null if no building exists
+     */
+    public AbstractBuilding getBuilding() {
+        return building;
+    }
+
+    /**
+     * Sets the building on this tile.
+     *
+     * @param building The building to place on this tile
+     */
+    public void setBuilding(AbstractBuilding building) {
+        this.building = building;
+    }
+
+    /**
+     * Checks if this tile has a building.
+     *
+     * @return true if this tile has a building, false otherwise
+     */
+    public boolean hasBuilding() {
+        return building != null;
+    }
+
+    /**
+     * Checks if this tile has a building under construction.
+     *
+     * @return true if this tile has a building under construction, false otherwise
+     */
+    public boolean hasBuildingUnderConstruction() {
+        return building != null && !building.isComplete();
+    }
+
+    /**
+     * Checks if this tile has a completed building.
+     *
+     * @return true if this tile has a completed building, false otherwise
+     */
+    public boolean hasCompletedBuilding() {
+        return building != null && building.isComplete();
     }
 
     @Override

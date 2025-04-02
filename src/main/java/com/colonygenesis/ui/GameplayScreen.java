@@ -8,8 +8,12 @@ import com.colonygenesis.ui.components.ResourceBar;
 import com.colonygenesis.ui.components.TileInfoPanel;
 import com.colonygenesis.ui.components.TurnInfoBar;
 import com.colonygenesis.ui.debug.DebugOverlay;
+import com.colonygenesis.ui.events.BuildingEvents;
+import com.colonygenesis.ui.events.ColonyEvents;
 import com.colonygenesis.ui.events.EventBus;
+import com.colonygenesis.ui.events.ResourceEvents;
 import com.colonygenesis.ui.events.TileEvents;
+import com.colonygenesis.ui.events.TurnEvents;
 import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.DialogUtil;
 import com.colonygenesis.util.LoggerUtil;
@@ -48,6 +52,8 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private final KeyCombination debugToggleKey = new KeyCodeCombination(KeyCode.F3);
     private final EventBus eventBus = EventBus.getInstance();
 
+    private Tile selectedTile;
+
     /**
      * Constructs a new gameplay screen for the specified game.
      *
@@ -59,12 +65,125 @@ public class GameplayScreen extends BorderPane implements IScreenController {
 
         getStyleClass().add(AppTheme.STYLE_SCREEN);
 
-        eventBus.subscribe(TileEvents.TileSelectedEvent.class, this::handleTileSelected);
-        eventBus.subscribe(TileEvents.ColonizeTileEvent.class, this::handleColonizeTile);
-
         initializeUI();
         setupDebugOverlay();
         setupKeyboardShortcuts();
+        subscribeToEvents();
+    }
+
+    /**
+     * Subscribes to events for reactive updates.
+     */
+    private void subscribeToEvents() {
+        // Subscribe to resource events
+        eventBus.subscribe(ResourceEvents.ResourcesUpdatedEvent.class, this::handleResourcesUpdated);
+
+        // Subscribe to turn events
+        eventBus.subscribe(TurnEvents.TurnAdvancedEvent.class, this::handleTurnAdvanced);
+        eventBus.subscribe(TurnEvents.PhaseChangedEvent.class, this::handlePhaseChanged);
+
+        // Subscribe to building events
+        eventBus.subscribe(BuildingEvents.BuildingPlacedEvent.class, this::handleBuildingPlaced);
+        eventBus.subscribe(BuildingEvents.BuildingCompletedEvent.class, this::handleBuildingCompleted);
+        eventBus.subscribe(BuildingEvents.BuildingActivatedEvent.class, this::handleBuildingActivated);
+        eventBus.subscribe(BuildingEvents.BuildingDeactivatedEvent.class, this::handleBuildingDeactivated);
+
+        // Subscribe to tile events
+        eventBus.subscribe(TileEvents.TileSelectedEvent.class, this::handleTileSelected);
+        eventBus.subscribe(TileEvents.ColonizeTileEvent.class, this::handleColonizeTile);
+        eventBus.subscribe(TileEvents.TileUpdatedEvent.class, this::handleTileUpdated);
+        eventBus.subscribe(TileEvents.RefreshMapEvent.class, this::handleRefreshMap);
+
+        // Subscribe to colony events
+        eventBus.subscribe(ColonyEvents.PopulationChangedEvent.class, this::handlePopulationChanged);
+    }
+
+    private void handleResourcesUpdated(ResourceEvents.ResourcesUpdatedEvent event) {
+        Platform.runLater(() -> {
+            resourceBar.update(event.getResources(), event.getProduction(), event.getCapacity());
+        });
+    }
+
+    private void handleTurnAdvanced(TurnEvents.TurnAdvancedEvent event) {
+        Platform.runLater(() -> {
+            turnInfoBar.update(event.getTurnNumber(), game.getTurnManager().getCurrentPhase());
+        });
+    }
+
+    private void handlePhaseChanged(TurnEvents.PhaseChangedEvent event) {
+        Platform.runLater(() -> {
+            turnInfoBar.update(event.getTurnNumber(), event.getPhase());
+        });
+    }
+
+    private void handleBuildingPlaced(BuildingEvents.BuildingPlacedEvent event) {
+        // The map view will update from the TileUpdatedEvent that follows
+        Platform.runLater(() -> {
+            DialogUtil.showMessageDialog(
+                    "Building Placed",
+                    "Started construction of " + event.getBuilding().getName() +
+                            " at " + event.getTile().getX() + "," + event.getTile().getY());
+        });
+    }
+
+    private void handleBuildingCompleted(BuildingEvents.BuildingCompletedEvent event) {
+        Platform.runLater(() -> {
+            DialogUtil.showMessageDialog(
+                    "Building Completed",
+                    event.getBuilding().getName() + " construction completed!");
+        });
+    }
+
+    private void handleBuildingActivated(BuildingEvents.BuildingActivatedEvent event) {
+        // The efficiency is available in the event if needed
+        // The UI components will update automatically from their subscriptions
+    }
+
+    private void handleBuildingDeactivated(BuildingEvents.BuildingDeactivatedEvent event) {
+        // The UI components will update automatically from their subscriptions
+    }
+
+    private void handleTileSelected(TileEvents.TileSelectedEvent event) {
+        selectedTile = event.getTile();
+
+        // The TileInfoPanel will update automatically from its subscription
+
+        // Get colonization cost for the tile
+        if (selectedTile != null) {
+            tileInfoPanel.setColonizationCost(game.getPlanet().getColonizationCost(selectedTile.getX(), selectedTile.getY()));
+        }
+    }
+
+    private void handleColonizeTile(TileEvents.ColonizeTileEvent event) {
+        Tile tile = event.getTile();
+        if (tile == null) return;
+
+        Result<Boolean> result = game.getPlanet().colonizeTile(tile.getX(), tile.getY());
+        Platform.runLater(() -> {
+            if (result.isFailure()) {
+                DialogUtil.showMessageDialog("Cannot Colonize", result.getErrorMessage());
+            } else {
+                // The map will update automatically from the TileUpdatedEvent
+                DialogUtil.showMessageDialog("Tile Colonized", "Successfully colonized tile at " + tile.getX() + "," + tile.getY());
+            }
+        });
+    }
+
+    private void handleTileUpdated(TileEvents.TileUpdatedEvent event) {
+        // The map view will handle this directly
+        // The TileInfoPanel will handle this if it's the selected tile
+    }
+
+    private void handleRefreshMap(TileEvents.RefreshMapEvent event) {
+        // Tell the map view to refresh completely
+        Platform.runLater(() -> {
+            mapView.renderGrid();
+        });
+    }
+
+    private void handlePopulationChanged(ColonyEvents.PopulationChangedEvent event) {
+        // The ResourceBar will handle this via its own subscription
+        // This is handled automatically
     }
 
     /**
@@ -81,7 +200,7 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         mapView.setGrid(game.getPlanet().getGrid());
         mapView.getStyleClass().add(AppTheme.STYLE_MAP_VIEW);
 
-        tileInfoPanel = new TileInfoPanel();
+        tileInfoPanel = new TileInfoPanel(game);
         tileInfoPanel.setMaxWidth(300);
 
         HBox contentBox = new HBox();
@@ -91,12 +210,12 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         setCenter(contentBox);
 
         gameControlBar = new GameControlBar(() -> {
-            game.getTurnManager().advancePhase();
-            updateDisplay();
+            Result<com.colonygenesis.core.TurnPhase> result = game.getTurnManager().advancePhase();
+            if (result.isFailure()) {
+                DialogUtil.showMessageDialog("Cannot Advance Phase", result.getErrorMessage());
+            }
         });
         setBottom(gameControlBar);
-
-        updateDisplay();
 
         Platform.runLater(() -> mapView.resetView());
     }
@@ -173,6 +292,10 @@ public class GameplayScreen extends BorderPane implements IScreenController {
 
         HBox.setHgrow(resourceBar, Priority.ALWAYS);
 
+        // Set initial planet info
+        String planetInfo = game.getPlanet().getName() + " (" + game.getPlanet().getType().getName() + ")";
+        planetInfoLabel.setText(planetInfo);
+
         return headerBox;
     }
 
@@ -189,64 +312,6 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         }
 
         screenManager.activateScreen(GameState.PAUSE_MENU);
-    }
-
-    /**
-     * Updates the display with current game state.
-     */
-    private void updateDisplay() {
-        turnInfoBar.update(
-                game.getCurrentTurn(),
-                game.getTurnManager().getCurrentPhase()
-        );
-
-        resourceBar.update(
-                game.getResourceManager().getAllResources(),
-                game.getResourceManager().getAllNetProduction(),
-                game.getResourceManager().getAllCapacity()
-        );
-
-        String planetInfo = game.getPlanet().getName() + " (" + game.getPlanet().getType().getName() + ")";
-        planetInfoLabel.setText(planetInfo);
-
-        if (debugOverlay != null && debugOverlay.isVisible()) {
-            int buildingCount = 0; // TODO: Get from building manager
-            int otherEntities = 0; // TODO: Get from entity manager
-            debugOverlay.setEntityCounts(buildingCount, otherEntities);
-        }
-
-        eventBus.publish(new TileEvents.RefreshMapEvent());
-    }
-
-    /**
-     * Handles tile selection events.
-     * Updates the tile info panel with information about the selected tile.
-     */
-    private void handleTileSelected(TileEvents.TileSelectedEvent event) {
-        Tile tile = event.getTile();
-        if (tile != null) {
-            tileInfoPanel.setColonizationCost(game.getPlanet().getColonizationCost(tile.getX(), tile.getY()));
-        }
-    }
-
-    /**
-     * Handles colonize tile events.
-     * Attempts to colonize the specified tile and updates the UI accordingly.
-     */
-    private void handleColonizeTile(TileEvents.ColonizeTileEvent event) {
-        Tile tile = event.getTile();
-        if (tile == null) return;
-
-        Result<Boolean> result = game.getPlanet().colonizeTile(tile.getX(), tile.getY());
-        if (result.isFailure()) {
-            DialogUtil.showMessageDialog("Cannot Colonize", result.getErrorMessage());
-        } else {
-            Tile updatedTile = game.getPlanet().getGrid().getTileAt(tile.getX(), tile.getY());
-
-            eventBus.publish(new TileEvents.TileUpdatedEvent(updatedTile));
-
-            updateDisplay();
-        }
     }
 
     @Override
@@ -266,7 +331,6 @@ public class GameplayScreen extends BorderPane implements IScreenController {
             Platform.runLater(() -> mapView.resetView());
             hasShownInitially = true;
         }
-        updateDisplay();
 
         Platform.runLater(this::requestFocus);
     }
@@ -278,15 +342,24 @@ public class GameplayScreen extends BorderPane implements IScreenController {
 
     @Override
     public void update() {
-        updateDisplay();
+        // No need for explicit update - reactive updates through events
+    }
+
+    /**
+     * Gets the current game instance.
+     *
+     * @return The current game
+     */
+    public Game getGame() {
+        return game;
     }
 
     /**
      * Cleans up resources when the screen is no longer needed.
+     * Unsubscribes from events to prevent memory leaks.
      */
     public void dispose() {
-        eventBus.clear();
-
+        // Clean up debug overlay
         if (debugOverlay != null) {
             debugOverlay.dispose();
         }

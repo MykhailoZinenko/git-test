@@ -52,12 +52,10 @@ public class HexGrid implements Serializable {
         int x = tile.getX();
         int y = tile.getY();
 
-        // Determine neighbors based on hex grid topology
-        // For odd rows, the neighbors are shifted
-        boolean isOddRow = (y % 2 == 1);
+        boolean isOddColumn = (x % 2 == 1);
 
         int[][] directions;
-        if (isOddRow) {
+        if (!isOddColumn) {
             directions = new int[][] {
                     {0, -1},   // North
                     {1, -1},   // Northeast

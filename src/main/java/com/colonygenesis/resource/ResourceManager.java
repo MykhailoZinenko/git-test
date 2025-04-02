@@ -1,13 +1,14 @@
 package com.colonygenesis.resource;
 
 import com.colonygenesis.core.Game;
+import com.colonygenesis.ui.events.EventBus;
+import com.colonygenesis.ui.events.ResourceEvents;
 import com.colonygenesis.util.LoggerUtil;
 import com.colonygenesis.util.Result;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.EnumMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -27,6 +28,9 @@ public class ResourceManager implements Serializable {
     private final Map<ResourceType, Integer> consumption;
     private final Map<ResourceType, Integer> lastTurnResources;
 
+    // Event bus for publishing events
+    private final transient EventBus eventBus;
+
     /**
      * Constructs a resource manager for the specified game.
      *
@@ -35,6 +39,8 @@ public class ResourceManager implements Serializable {
     public ResourceManager(Game game) {
         this.game = game;
         LOGGER.fine("Initializing ResourceManager");
+
+        this.eventBus = EventBus.getInstance();
 
         resources = new EnumMap<>(ResourceType.class);
         capacity = new EnumMap<>(ResourceType.class);
@@ -56,6 +62,9 @@ public class ResourceManager implements Serializable {
         resources.put(ResourceType.ENERGY, 200);
 
         LOGGER.info("ResourceManager initialized with starting resources");
+
+        // Publish initial resource state
+        publishResourcesUpdated();
     }
 
     /**
@@ -179,19 +188,27 @@ public class ResourceManager implements Serializable {
         int cap = capacity.getOrDefault(type, 0);
 
         if (type.isStorable() && current + amount > cap) {
+            int previousAmount = current;
             resources.put(type, cap);
 
             int actualAdded = cap - current;
             LOGGER.warning(String.format("Resource %s at capacity: %d/%d. Wasted %d units",
                     type.getName(), cap, cap, amount - actualAdded));
 
+            // Publish resource changed event
+            eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, cap, previousAmount));
+
             return Result.failure(String.format("Storage at capacity. Added %d of %d %s",
                     actualAdded, amount, type.getName()));
         } else {
+            int previousAmount = current;
             resources.put(type, current + amount);
 
             LOGGER.fine(String.format("Added %d %s. New total: %d",
                     amount, type.getName(), current + amount));
+
+            // Publish resource changed event
+            eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, current + amount, previousAmount));
 
             return Result.success(amount);
         }
@@ -222,10 +239,14 @@ public class ResourceManager implements Serializable {
             return Result.failure(error);
         }
 
+        int previousAmount = current;
         resources.put(type, current - amount);
 
         LOGGER.fine(String.format("Removed %d %s. New total: %d",
                 amount, type.getName(), current - amount));
+
+        // Publish resource changed event
+        eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, current - amount, previousAmount));
 
         return Result.success(amount);
     }
@@ -237,9 +258,13 @@ public class ResourceManager implements Serializable {
      * @param value The production value
      */
     public void setProduction(ResourceType type, int value) {
+        int previousValue = production.getOrDefault(type, 0);
         production.put(type, value);
         LOGGER.fine(String.format("Set %s production to %d",
                 type.getName(), value));
+
+        // Publish resource production changed event
+        eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, value, previousValue, true));
     }
 
     /**
@@ -249,9 +274,14 @@ public class ResourceManager implements Serializable {
      * @param value The consumption value
      */
     public void setConsumption(ResourceType type, int value) {
+        int previousValue = consumption.getOrDefault(type, 0);
         consumption.put(type, value);
         LOGGER.fine(String.format("Set %s consumption to %d",
                 type.getName(), value));
+
+        // No specific event for consumption changes - it's reflected in net production
+        // Publish resources updated event to reflect changes in UI
+        publishResourcesUpdated();
     }
 
     /**
@@ -268,6 +298,9 @@ public class ResourceManager implements Serializable {
 
         LOGGER.info(String.format("Increased %s capacity by %d. New capacity: %d",
                 type.getName(), amount, newCapacity));
+
+        // Publish resources updated event to reflect capacity changes
+        publishResourcesUpdated();
 
         return newCapacity;
     }
@@ -303,6 +336,9 @@ public class ResourceManager implements Serializable {
 
                 if (result.isFailure()) {
                     resourceReport.append(type.getName()).append(": SHORTAGE (needed ").append(needed).append(")\n");
+
+                    // Publish resource shortage event
+                    eventBus.publish(new ResourceEvents.ResourceShortageEvent(type, needed));
                 } else {
                     resourceReport.append(type.getName()).append(": ").append(net).append("\n");
                 }
@@ -310,6 +346,9 @@ public class ResourceManager implements Serializable {
         }
 
         LOGGER.info(resourceReport.toString());
+
+        // Publish overall resources updated event
+        publishResourcesUpdated();
     }
 
     /**
@@ -327,5 +366,16 @@ public class ResourceManager implements Serializable {
         }
 
         return changes;
+    }
+
+    /**
+     * Publishes a resources updated event to refresh the UI.
+     */
+    private void publishResourcesUpdated() {
+        eventBus.publish(new ResourceEvents.ResourcesUpdatedEvent(
+                new EnumMap<>(resources),
+                getAllNetProduction(),
+                new EnumMap<>(capacity)
+        ));
     }
 }

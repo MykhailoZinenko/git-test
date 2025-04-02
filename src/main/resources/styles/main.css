@@ -479,3 +479,177 @@
     -fx-border-width: 1px;
     -fx-background-radius: 4px;
 }
+
+/* ====== TabPane Styling ====== */
+.tab-pane {
+    -fx-tab-min-width: 120px;
+}
+
+.tab-pane .tab-header-area {
+    -fx-background-color: rgb(40, 50, 92);
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 0 0 1 0;
+}
+
+.tab-pane .tab {
+    -fx-background-color: rgb(28, 35, 64);
+    -fx-background-radius: 0;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 0 1 0 0;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: rgb(40, 50, 92);
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-width: 0 1 0 0;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: rgb(230, 230, 230);
+    -fx-font-weight: bold;
+}
+
+/* ====== Building List Styles ====== */
+.building-category-header {
+    -fx-background-color: rgb(90, 100, 130);
+    -fx-padding: 5px 10px;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+
+.building-option {
+    -fx-background-color: rgb(28, 40, 70);
+    -fx-background-radius: 4px;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-radius: 4px;
+    -fx-border-width: 1px;
+    -fx-padding: 10px;
+    -fx-cursor: hand;
+}
+
+.building-option:hover {
+    -fx-background-color: rgb(45, 55, 90);
+}
+
+.building-option-selected {
+    -fx-background-color: rgb(45, 65, 105);
+    -fx-border-color: rgb(120, 160, 200);
+    -fx-border-width: 2px;
+}
+
+.building-name {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: rgb(230, 230, 230);
+}
+
+.building-description {
+    -fx-font-size: 13px;
+    -fx-text-fill: rgb(190, 190, 190);
+}
+
+.building-stats {
+    -fx-font-size: 13px;
+    -fx-text-fill: rgb(210, 210, 210);
+    -fx-font-weight: bold;
+    -fx-text-alignment: right;
+}
+
+/* ====== Details Panel ====== */
+.details-panel {
+    -fx-background-color: rgb(25, 30, 60);
+    -fx-background-radius: 5px;
+    -fx-border-color: rgb(75, 115, 153);
+    -fx-border-radius: 5px;
+    -fx-border-width: 1px;
+    -fx-padding: 15px;
+}
+
+.details-empty-msg {
+    -fx-text-fill: rgb(120, 130, 150);
+    -fx-font-style: italic;
+}
+
+/* ====== Scrollbar Styling ====== */
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .scroll-bar {
+    -fx-background-color: rgb(28, 35, 64);
+}
+
+.scroll-pane > .scroll-bar > .thumb {
+    -fx-background-color: rgb(75, 115, 153);
+    -fx-background-radius: 0;
+}
+
+/* ====== Action Buttons ====== */
+.action-button-container {
+    -fx-spacing: 20px;
+    -fx-padding: 15px 0 0 0;
+    -fx-alignment: center;
+}
+
+.cancel-button {
+    -fx-background-color: rgb(244, 67, 54);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-min-width: 120px;
+    -fx-min-height: 36px;
+    -fx-background-radius: 4px;
+}
+
+.cancel-button:hover {
+    -fx-background-color: rgb(255, 87, 74);
+}
+
+.build-button {
+    -fx-background-color: rgb(76, 175, 80);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-min-width: 120px;
+    -fx-min-height: 36px;
+    -fx-background-radius: 4px;
+}
+
+.build-button:hover {
+    -fx-background-color: rgb(96, 195, 100);
+}
+
+.build-button:disabled {
+    -fx-background-color: rgb(100, 130, 100);
+    -fx-opacity: 0.7;
+}
+
+/* ====== Progress Bar Styling ====== */
+.progress-bar {
+    -fx-accent: rgb(75, 115, 153);
+}
+
+.progress-bar .track {
+    -fx-background-color: rgb(30, 40, 60);
+    -fx-background-radius: 0;
+}
+
+.progress-bar .bar {
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-padding: 5px;
+}
+
+/* Construction progress bar style */
+.construction-progress .bar {
+    -fx-background-color: linear-gradient(to right, rgb(255, 165, 0), rgb(100, 200, 100));
+}

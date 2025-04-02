@@ -29,7 +29,7 @@ public class MapView extends Pane {
     private final Canvas canvas;
     private final GraphicsContext gc;
     private HexGrid grid;
-    private final EventBus eventBus = EventBus.getInstance();
+    private final EventBus eventBus;
 
     private final double hexSize = 30.0;
 
@@ -59,6 +59,7 @@ public class MapView extends Pane {
         getChildren().add(canvas);
 
         gc = canvas.getGraphicsContext2D();
+        eventBus = EventBus.getInstance();
 
         setOnMousePressed(this::handleMousePressed);
         setOnMouseDragged(this::handleMouseDragged);
@@ -70,13 +71,9 @@ public class MapView extends Pane {
         widthProperty().addListener((obs, oldVal, newVal) -> draw());
         heightProperty().addListener((obs, oldVal, newVal) -> draw());
 
-        eventBus.subscribe(TileEvents.TileUpdatedEvent.class, event -> {
-            if (event.getTile() == selectedTile) {
-                draw();
-            }
-        });
-
-        eventBus.subscribe(TileEvents.RefreshMapEvent.class, event -> draw());
+        // Subscribe to relevant events
+        eventBus.subscribe(TileEvents.TileUpdatedEvent.class, this::handleTileUpdated);
+        eventBus.subscribe(TileEvents.RefreshMapEvent.class, this::handleRefreshMap);
     }
 
     /**
@@ -103,6 +100,24 @@ public class MapView extends Pane {
     public void setSelectedTile(Tile tile) {
         this.selectedTile = tile;
         draw();
+    }
+
+    /**
+     * Handles the tile updated event.
+     */
+    private void handleTileUpdated(TileEvents.TileUpdatedEvent event) {
+        Platform.runLater(() -> {
+            renderTile(event.getTile());
+        });
+    }
+
+    /**
+     * Handles the refresh map event.
+     */
+    private void handleRefreshMap(TileEvents.RefreshMapEvent event) {
+        Platform.runLater(() -> {
+            draw();
+        });
     }
 
     /**
@@ -179,6 +194,7 @@ public class MapView extends Pane {
                 selectedTile = tile;
                 draw();
 
+                // Publish tile selected event
                 eventBus.publish(new TileEvents.TileSelectedEvent(tile));
             }
         }
@@ -308,6 +324,21 @@ public class MapView extends Pane {
     }
 
     /**
+     * Renders a specific tile.
+     */
+    public void renderTile(Tile tile) {
+        if (tile == null || getWidth() <= 0 || getHeight() <= 0 || grid == null) return;
+
+        gc.save();
+        gc.translate(translateX, translateY);
+        gc.scale(scale, scale);
+
+        drawHexagon(tile);
+
+        gc.restore();
+    }
+
+    /**
      * Draws a hexagon for the specified tile.
      */
     private void drawHexagon(Tile tile) {
@@ -345,7 +376,7 @@ public class MapView extends Pane {
                 gc.setStroke(Color.YELLOW);
                 gc.setLineWidth(1.5);
             } else if (tile.isColonized()) {
-                gc.setStroke(Color.LIGHTGREEN);
+                gc.setStroke(Color.rgb(255, 255, 255, 0.7));
                 gc.setLineWidth(1.5);
             } else {
                 gc.setStroke(Color.rgb(80, 80, 100));
@@ -364,15 +395,42 @@ public class MapView extends Pane {
         gc.fill();
         gc.stroke();
 
-        if (tile.isRevealed() && tile.isColonized()) {
-            gc.setFill(Color.rgb(255, 255, 255, 0.7));
-            gc.fillOval(centerX - hexSize/4, centerY - hexSize/4, hexSize/2, hexSize/2);
-        }
+        if (tile.isRevealed()) {
+            // Draw indicators for colonized tiles
+            if (tile.isColonized()) {
+                // Base colonization indicator
+                gc.setFill(Color.rgb(255, 255, 255, 0.7));
+                gc.fillOval(centerX - hexSize/4, centerY - hexSize/4, hexSize/2, hexSize/2);
 
-        if (scale > 1.5 && tile.isRevealed()) {
-            gc.setFill(Color.WHITE);
-            gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText(gridX + "," + gridY, centerX, centerY);
+                // Building indicators
+                if (tile.hasBuilding()) {
+                    if (tile.getBuilding().isComplete()) {
+                        // Show active/inactive state
+                        if (tile.getBuilding().isActive()) {
+                            gc.setFill(Color.rgb(50, 200, 50, 0.8));  // Green for active
+                        } else {
+                            gc.setFill(Color.rgb(200, 50, 50, 0.8));  // Red for inactive
+                        }
+                        gc.fillRect(centerX - hexSize/3, centerY - hexSize/3, hexSize/1.5, hexSize/1.5);
+                    } else {
+                        // Building under construction
+                        gc.setFill(Color.rgb(255, 165, 0, 0.8));  // Orange for construction
+                        gc.fillRect(centerX - hexSize/3, centerY - hexSize/3, hexSize/1.5, hexSize/1.5);
+
+                        // Progress indicator
+                        double progress = tile.getBuilding().getConstructionProgress() / 100.0;
+                        gc.setFill(Color.rgb(50, 200, 50, 0.6));  // Green for progress
+                        gc.fillRect(centerX - hexSize/3, centerY - hexSize/3, hexSize/1.5 * progress, hexSize/1.5);
+                    }
+                }
+            }
+
+            // Display coordinates when zoomed in
+            if (scale > 1.5) {
+                gc.setFill(Color.WHITE);
+                gc.setTextAlign(TextAlignment.CENTER);
+                gc.fillText(gridX + "," + gridY, centerX, centerY);
+            }
         }
     }
 
@@ -397,6 +455,13 @@ public class MapView extends Pane {
 
         scale = 1.0;
         draw();
+    }
+
+    /**
+     * Returns a hint about the map controls for display to the user.
+     */
+    public String getControlsHint() {
+        return "Map Controls: Left-click to select • Drag to pan • Scroll to zoom";
     }
 
     /**
