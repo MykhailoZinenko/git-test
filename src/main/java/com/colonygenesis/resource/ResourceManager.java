@@ -35,8 +35,6 @@ public class ResourceManager implements Serializable {
 
     /**
      * Constructs a resource manager for the specified game.
-     *
-     * @param game The game
      */
     public ResourceManager() {
         LOGGER.fine("Initializing ResourceManager");
