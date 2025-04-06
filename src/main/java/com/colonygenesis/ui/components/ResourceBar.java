@@ -4,13 +4,11 @@ import com.colonygenesis.resource.ResourceType;
 import com.colonygenesis.ui.events.EventBus;
 import com.colonygenesis.ui.events.ResourceEvents;
 import com.colonygenesis.ui.styling.AppTheme;
-import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Platform;
 import javafx.scene.layout.HBox;
 
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Component for displaying resources in the game UI.

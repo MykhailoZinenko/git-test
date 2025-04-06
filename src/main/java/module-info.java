@@ -10,10 +10,22 @@ module com.colonygenesis {
     requires java.logging;
     requires java.management;
 
-    opens com.colonygenesis.core to javafx.fxml;
+    // Core exports
     exports com.colonygenesis.core;
+    opens com.colonygenesis.core to javafx.fxml;
+
+    // UI exports
     exports com.colonygenesis.ui;
     opens com.colonygenesis.ui to javafx.fxml;
     exports com.colonygenesis.ui.components;
     opens com.colonygenesis.ui.components to javafx.fxml;
+    exports com.colonygenesis.ui.events;
+    exports com.colonygenesis.ui.styling;
+    exports com.colonygenesis.ui.debug;
+
+    // Game components exports
+    exports com.colonygenesis.map;
+    exports com.colonygenesis.resource;
+    exports com.colonygenesis.building;
+    exports com.colonygenesis.util;
 }

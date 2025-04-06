@@ -1,6 +1,5 @@
 package com.colonygenesis.resource;
 
-import com.colonygenesis.core.Game;
 import com.colonygenesis.ui.events.EventBus;
 import com.colonygenesis.ui.events.ResourceEvents;
 import com.colonygenesis.util.LoggerUtil;
