@@ -124,18 +124,14 @@ public class MapView extends Pane {
      * Handles the tile updated event.
      */
     private void handleTileUpdated(TileEvents.TileUpdatedEvent event) {
-        Platform.runLater(() -> {
-            renderTile(event.getTile());
-        });
+        Platform.runLater(() -> renderTile(event.getTile()));
     }
 
     /**
      * Handles the refresh map event.
      */
     private void handleRefreshMap(TileEvents.RefreshMapEvent event) {
-        Platform.runLater(() -> {
-            draw();
-        });
+        Platform.runLater(this::draw);
     }
 
     /**

@@ -41,27 +41,19 @@ public class AdvancedProducer extends ProductionBuilding {
         this.inputTypes = new ArrayList<>(producerType.getInputTypes());
         this.inputAmounts = new ArrayList<>(producerType.getInputAmounts());
 
-        for (Map.Entry<ResourceType, Integer> entry : producerType.getConstructionCost().entrySet()) {
-            constructionCost.put(entry.getKey(), entry.getValue());
-        }
+        constructionCost.putAll(producerType.getConstructionCost());
 
-        for (Map.Entry<ResourceType, Integer> entry : producerType.getMaintenanceCost().entrySet()) {
-            maintenanceCost.put(entry.getKey(), entry.getValue());
-        }
+        maintenanceCost.putAll(producerType.getMaintenanceCost());
     }
 
     @Override
     protected void initializeConstructionCost() {
-        for (Map.Entry<ResourceType, Integer> entry : producerType.getConstructionCost().entrySet()) {
-            constructionCost.put(entry.getKey(), entry.getValue());
-        }
+        constructionCost.putAll(producerType.getConstructionCost());
     }
 
     @Override
     protected void initializeMaintenanceCost() {
-        for (Map.Entry<ResourceType, Integer> entry : producerType.getMaintenanceCost().entrySet()) {
-            maintenanceCost.put(entry.getKey(), entry.getValue());
-        }
+        maintenanceCost.putAll(producerType.getMaintenanceCost());
     }
 
     @Override

@@ -6,9 +6,6 @@ import com.colonygenesis.ui.events.ResourceEvents;
 import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Platform;
-import javafx.geometry.Pos;
-import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 
 import java.util.EnumMap;
@@ -20,7 +17,6 @@ import java.util.logging.Logger;
  * Uses the ResourceDisplay component for individual resources.
  */
 public class ResourceBar extends HBox {
-    private static final Logger LOGGER = LoggerUtil.getLogger(ResourceBar.class);
     private final Map<ResourceType, ResourceDisplay> resourceDisplays = new EnumMap<>(ResourceType.class);
     private final ResourceDisplay populationDisplay;
     private final EventBus eventBus;

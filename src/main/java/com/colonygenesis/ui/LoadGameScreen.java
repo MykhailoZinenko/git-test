@@ -3,7 +3,6 @@ package com.colonygenesis.ui;
 import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.ui.styling.AppTheme;
-import com.colonygenesis.util.DialogUtil;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;

@@ -151,10 +151,8 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
 
         PlanetType.TerrainDistribution distribution = planetType.getTerrainDistribution();
 
-        distribution.getDistribution().forEach((terrainType, probability) -> {
-            description.append("\n- ").append(terrainType.getName())
-                    .append(": ").append(String.format("%.0f%%", probability * 100));
-        });
+        distribution.getDistribution().forEach((terrainType, probability) -> description.append("\n- ").append(terrainType.getName())
+                .append(": ").append(String.format("%.0f%%", probability * 100)));
 
         planetDescription.setText(description.toString());
     }

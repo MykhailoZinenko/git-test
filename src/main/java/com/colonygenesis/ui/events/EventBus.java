@@ -3,7 +3,6 @@ package com.colonygenesis.ui.events;
 import com.colonygenesis.util.LoggerUtil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -111,9 +110,7 @@ public class EventBus {
 
         for (Map.Entry<Class<? extends GameEvent>, List<EventHandler<? extends GameEvent>>> entry : subscribers.entrySet()) {
             List<EventHandler<? extends GameEvent>> handlers = entry.getValue();
-            handlers.removeIf(handler -> {
-                return handler.toString().contains(subscriber.getClass().getName());
-            });
+            handlers.removeIf(handler -> handler.toString().contains(subscriber.getClass().getName()));
 
             if (handlers.isEmpty()) {
                 subscribers.remove(entry.getKey());

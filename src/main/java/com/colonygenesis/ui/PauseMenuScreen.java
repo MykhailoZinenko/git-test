@@ -11,7 +11,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -27,15 +26,9 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
     private static final Logger LOGGER = LoggerUtil.getLogger(PauseMenuScreen.class);
 
     private final ScreenManager screenManager;
-    private BorderPane gameplayPane;
-    private Label titleLabel;
+
     private Label infoLabel;
 
-    /**
-     * Constructs a new pause menu screen for the specified game.
-     *
-     * @param game The current game
-     */
     /**
      * Constructs a new pause menu screen.
      */
@@ -60,7 +53,7 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
         menuContainer.setMaxWidth(400);
         menuContainer.setMaxHeight(500);
 
-        titleLabel = new Label("Game Paused");
+        Label titleLabel = new Label("Game Paused");
         titleLabel.getStyleClass().add(AppTheme.STYLE_TITLE);
 
         infoLabel = new Label("");
@@ -183,16 +176,6 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
         Button button = new Button(text);
         button.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_MENU);
         return button;
-    }
-
-    /**
-     * Sets the underlying gameplay pane.
-     * Used to create a layered effect where the pause menu appears on top.
-     *
-     * @param gameplayPane The gameplay pane
-     */
-    public void setGameplayPane(BorderPane gameplayPane) {
-        this.gameplayPane = gameplayPane;
     }
 
     @Override

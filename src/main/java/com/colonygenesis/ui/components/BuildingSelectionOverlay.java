@@ -153,9 +153,7 @@ public class BuildingSelectionOverlay extends StackPane {
         FadeTransition fadeOut = new FadeTransition(Duration.millis(200), contentContainer);
         fadeOut.setFromValue(1);
         fadeOut.setToValue(0);
-        fadeOut.setOnFinished(e -> {
-            ScreenManager.getInstance().activateScreen(GameState.GAMEPLAY);
-        });
+        fadeOut.setOnFinished(e -> ScreenManager.getInstance().activateScreen(GameState.GAMEPLAY));
 
         TranslateTransition slideOut = new TranslateTransition(Duration.millis(200), contentContainer);
         slideOut.setFromY(0);
@@ -339,8 +337,7 @@ public class BuildingSelectionOverlay extends StackPane {
 
         VBox specificDetails = new VBox(5);
 
-        if (selectedBuilding instanceof ProductionBuilding) {
-            ProductionBuilding productionBuilding = (ProductionBuilding) selectedBuilding;
+        if (selectedBuilding instanceof ProductionBuilding productionBuilding) {
             Label outputLabel = new Label("Produces: " +
                     productionBuilding.getBaseOutputAmount() + " " +
                     productionBuilding.getPrimaryOutputType().getName() + " per turn");
@@ -351,8 +348,7 @@ public class BuildingSelectionOverlay extends StackPane {
             workersLabel.getStyleClass().add("building-description");
             specificDetails.getChildren().add(workersLabel);
         }
-        else if (selectedBuilding instanceof HabitationBuilding) {
-            HabitationBuilding habitationBuilding = (HabitationBuilding) selectedBuilding;
+        else if (selectedBuilding instanceof HabitationBuilding habitationBuilding) {
             Label capacityLabel = new Label("Capacity: " + habitationBuilding.getCapacity() + " colonists");
             capacityLabel.getStyleClass().add("building-description");
             specificDetails.getChildren().add(capacityLabel);
@@ -430,9 +426,7 @@ public class BuildingSelectionOverlay extends StackPane {
                 new Thread(() -> {
                     try {
                         Thread.sleep(500);
-                        Platform.runLater(() -> {
-                            ScreenManager.getInstance().showDialog("Construction", messageBox);
-                        });
+                        Platform.runLater(() -> ScreenManager.getInstance().showDialog("Construction", messageBox));
                     } catch (InterruptedException ex) {
                         // Ignore
                     }
@@ -495,16 +489,14 @@ public class BuildingSelectionOverlay extends StackPane {
             infoBox.setAlignment(Pos.CENTER_RIGHT);
             infoBox.setMinWidth(120);
 
-            if (building instanceof ProductionBuilding) {
-                ProductionBuilding pb = (ProductionBuilding) building;
+            if (building instanceof ProductionBuilding pb) {
                 Label outputLabel = new Label(pb.getBaseOutputAmount() + " " +
                         pb.getPrimaryOutputType().getName() + "/turn");
                 outputLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
                 outputLabel.setStyle("-fx-font-size: 11px;");
                 infoBox.getChildren().add(outputLabel);
             }
-            else if (building instanceof HabitationBuilding) {
-                HabitationBuilding hb = (HabitationBuilding) building;
+            else if (building instanceof HabitationBuilding hb) {
                 Label capacityLabel = new Label("Capacity: " + hb.getCapacity());
                 capacityLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
                 capacityLabel.setStyle("-fx-font-size: 11px;");

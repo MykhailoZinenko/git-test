@@ -42,13 +42,9 @@ public class AdvancedHousing extends HabitationBuilding {
         this.amenities = new HashSet<>();
         this.moraleBonus = housingType.getBaseMoraleBonus();
 
-        for (Map.Entry<ResourceType, Integer> entry : housingType.getConstructionCost().entrySet()) {
-            constructionCost.put(entry.getKey(), entry.getValue());
-        }
+        constructionCost.putAll(housingType.getConstructionCost());
 
-        for (Map.Entry<ResourceType, Integer> entry : housingType.getMaintenanceCost().entrySet()) {
-            maintenanceCost.put(entry.getKey(), entry.getValue());
-        }
+        maintenanceCost.putAll(housingType.getMaintenanceCost());
 
         for (Amenity amenity : housingType.getDefaultAmenities()) {
             addAmenity(amenity);
@@ -57,16 +53,12 @@ public class AdvancedHousing extends HabitationBuilding {
 
     @Override
     protected void initializeConstructionCost() {
-        for (Map.Entry<ResourceType, Integer> entry : housingType.getConstructionCost().entrySet()) {
-            constructionCost.put(entry.getKey(), entry.getValue());
-        }
+        constructionCost.putAll(housingType.getConstructionCost());
     }
 
     @Override
     protected void initializeMaintenanceCost() {
-        for (Map.Entry<ResourceType, Integer> entry : housingType.getMaintenanceCost().entrySet()) {
-            maintenanceCost.put(entry.getKey(), entry.getValue());
-        }
+        maintenanceCost.putAll(housingType.getMaintenanceCost());
     }
 
     @Override

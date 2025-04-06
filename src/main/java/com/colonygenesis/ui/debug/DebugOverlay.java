@@ -5,7 +5,6 @@ import com.colonygenesis.ui.events.BuildingEvents;
 import com.colonygenesis.ui.events.ColonyEvents;
 import com.colonygenesis.ui.events.EventBus;
 import com.colonygenesis.ui.events.TurnEvents;
-import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -301,11 +300,9 @@ public class DebugOverlay extends VBox {
             int constructionCount = game.getBuildingManager().getBuildingsUnderConstructionCount();
             int activeCount = game.getBuildingManager().getActiveBuildings();
 
-            Platform.runLater(() -> {
-                entityCountLabel.setText("Buildings: " + buildingCount +
-                        " (Active: " + activeCount +
-                        ", Building: " + constructionCount + ")");
-            });
+            Platform.runLater(() -> entityCountLabel.setText("Buildings: " + buildingCount +
+                    " (Active: " + activeCount +
+                    ", Building: " + constructionCount + ")"));
         }
     }
 
@@ -337,9 +334,7 @@ public class DebugOverlay extends VBox {
      * @param otherEntities Number of other entities
      */
     public void setEntityCounts(int buildingCount, int otherEntities) {
-        Platform.runLater(() -> {
-            entityCountLabel.setText("Buildings: " + buildingCount + ", Other: " + otherEntities);
-        });
+        Platform.runLater(() -> entityCountLabel.setText("Buildings: " + buildingCount + ", Other: " + otherEntities));
     }
 
     /**

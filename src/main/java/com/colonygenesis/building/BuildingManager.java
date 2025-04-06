@@ -98,8 +98,7 @@ public class BuildingManager implements Serializable {
 
                 eventBus.publish(new BuildingEvents.BuildingCompletedEvent(building));
 
-                if (building instanceof HabitationBuilding) {
-                    HabitationBuilding habitation = (HabitationBuilding) building;
+                if (building instanceof HabitationBuilding habitation) {
                     game.getResourceManager().increaseCapacity(ResourceType.POPULATION, habitation.getCapacity());
 
                     if (habitation.getPopulationGrowthRate() > 0) {
@@ -194,8 +193,7 @@ public class BuildingManager implements Serializable {
                 building.activate();
             }
 
-            if (building instanceof HabitationBuilding) {
-                HabitationBuilding habitation = (HabitationBuilding) building;
+            if (building instanceof HabitationBuilding habitation) {
                 game.getResourceManager().increaseCapacity(ResourceType.POPULATION, habitation.getCapacity());
 
                 if (habitation.getPopulationGrowthRate() > 0) {
@@ -229,8 +227,7 @@ public class BuildingManager implements Serializable {
             building.removeWorkers(building.getWorkersAssigned());
         }
 
-        if (building instanceof HabitationBuilding) {
-            HabitationBuilding habitation = (HabitationBuilding) building;
+        if (building instanceof HabitationBuilding habitation) {
 
             if (habitation.getPopulationGrowthRate() > 0) {
                 game.getResourceManager().adjustPopulationGrowthRate(-habitation.getPopulationGrowthRate());
@@ -332,7 +329,7 @@ public class BuildingManager implements Serializable {
     }
 
     @Serial
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException, IOException {
+    private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException {
         in.defaultReadObject();
 
         this.eventBus = EventBus.getInstance();

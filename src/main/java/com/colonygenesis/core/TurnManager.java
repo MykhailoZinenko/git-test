@@ -176,7 +176,7 @@ public class TurnManager implements Serializable {
     }
 
     @Serial
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException, IOException {
+    private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException {
         in.defaultReadObject();
         this.eventBus = EventBus.getInstance();
         LOGGER.info("TurnManager deserialized and transient fields reinitialized");

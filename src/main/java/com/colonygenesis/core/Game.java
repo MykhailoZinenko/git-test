@@ -1,14 +1,10 @@
 package com.colonygenesis.core;
 
 import com.colonygenesis.building.BuildingManager;
-import com.colonygenesis.map.HexGrid;
-import com.colonygenesis.map.MapGenerator;
 import com.colonygenesis.map.Planet;
 import com.colonygenesis.map.PlanetType;
 import com.colonygenesis.resource.ResourceManager;
-import com.colonygenesis.resource.ResourceType;
 import com.colonygenesis.ui.events.EventBus;
-import com.colonygenesis.ui.events.ResourceEvents;
 import com.colonygenesis.ui.events.TurnEvents;
 import com.colonygenesis.util.DialogUtil;
 import com.colonygenesis.util.LoggerUtil;
@@ -76,7 +72,7 @@ public class Game implements Serializable {
         this.currentTurn = 1;
         this.saveDate = null;
 
-        this.resourceManager = new ResourceManager(this);
+        this.resourceManager = new ResourceManager();
         this.turnManager = new TurnManager(this);
         this.buildingManager = new BuildingManager(this);
         this.planet = new Planet(this, colonyName + " Prime", planetType, mapSize);
@@ -188,7 +184,7 @@ public class Game implements Serializable {
             valid = false;
         }
 
-        return valid;
+        return !valid;
     }
 
     /**
@@ -198,7 +194,7 @@ public class Game implements Serializable {
      */
     public String saveGame() {
         try {
-            if (!validateGameState()) {
+            if (validateGameState()) {
                 LOGGER.severe("Cannot save game: invalid game state");
                 return null;
             }
@@ -239,7 +235,7 @@ public class Game implements Serializable {
 
                 loadedGame.reconnectAfterLoading();
 
-                if (!loadedGame.validateGameState()) {
+                if (loadedGame.validateGameState()) {
                     LOGGER.severe("Loaded game has invalid state after reconnection");
                     return null;
                 }
@@ -278,11 +274,10 @@ public class Game implements Serializable {
         LOGGER.info("Reconnecting game components after loading");
 
         if (resourceManager != null) {
-            resourceManager.setGame(this);
             resourceManager.publishCurrentState();
         } else {
             LOGGER.severe("ResourceManager is null after loading");
-            resourceManager = new ResourceManager(this);
+            resourceManager = new ResourceManager();
         }
 
         if (turnManager != null) {
@@ -322,10 +317,6 @@ public class Game implements Serializable {
     @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-
-        if (resourceManager != null) {
-            resourceManager.setGame(this);
-        }
 
         if (turnManager != null) {
             turnManager.setGame(this);

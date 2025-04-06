@@ -2,8 +2,8 @@ package com.colonygenesis.ui;
 
 import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
+import com.colonygenesis.core.TurnPhase;
 import com.colonygenesis.map.Tile;
-import com.colonygenesis.resource.ResourceManager;
 import com.colonygenesis.ui.components.*;
 import com.colonygenesis.ui.debug.DebugOverlay;
 import com.colonygenesis.ui.events.*;
@@ -38,8 +38,6 @@ public class GameplayScreen extends BorderPane implements IScreenController {
 
     private ResourceBar resourceBar;
     private TurnInfoBar turnInfoBar;
-    private GameControlBar gameControlBar;
-    private Label planetInfoLabel;
     private TileInfoPanel tileInfoPanel;
     private NotificationManager notificationManager;
 
@@ -103,9 +101,7 @@ public class GameplayScreen extends BorderPane implements IScreenController {
      * Handles updates to resources.
      */
     private void handleResourcesUpdated(ResourceEvents.ResourcesUpdatedEvent event) {
-        Platform.runLater(() -> {
-            resourceBar.update(event.getResources(), event.getProduction(), event.getCapacity());
-        });
+        Platform.runLater(() -> resourceBar.update(event.getResources(), event.getProduction(), event.getCapacity()));
     }
 
     /**
@@ -143,33 +139,27 @@ public class GameplayScreen extends BorderPane implements IScreenController {
      * Handles phase change events.
      */
     private void handlePhaseChanged(TurnEvents.PhaseChangedEvent event) {
-        Platform.runLater(() -> {
-            turnInfoBar.update(event.getTurnNumber(), event.getPhase());
-        });
+        Platform.runLater(() -> turnInfoBar.update(event.getTurnNumber(), event.getPhase()));
     }
 
     /**
      * Handles building placement events.
      */
     private void handleBuildingPlaced(BuildingEvents.BuildingPlacedEvent event) {
-        Platform.runLater(() -> {
-            eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
-                    event.getBuilding().getName(),
-                    "Construction started",
-                    NotificationEvents.NotificationType.INFO
-            ));
-        });
+        Platform.runLater(() -> eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
+                event.getBuilding().getName(),
+                "Construction started",
+                NotificationEvents.NotificationType.INFO
+        )));
     }
 
     /**
      * Handles building completion events.
      */
     private void handleBuildingCompleted(BuildingEvents.BuildingCompletedEvent event) {
-        Platform.runLater(() -> {
-            eventBus.publish(NotificationEvents.Factory.buildingCompleted(
-                    event.getBuilding().getName()
-            ));
-        });
+        Platform.runLater(() -> eventBus.publish(NotificationEvents.Factory.buildingCompleted(
+                event.getBuilding().getName()
+        )));
     }
 
     /**
@@ -192,13 +182,11 @@ public class GameplayScreen extends BorderPane implements IScreenController {
      * Handles building deactivation events.
      */
     private void handleBuildingDeactivated(BuildingEvents.BuildingDeactivatedEvent event) {
-        Platform.runLater(() -> {
-            eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
-                    event.getBuilding().getName(),
-                    "Building deactivated",
-                    NotificationEvents.NotificationType.WARNING
-            ));
-        });
+        Platform.runLater(() -> eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
+                event.getBuilding().getName(),
+                "Building deactivated",
+                NotificationEvents.NotificationType.WARNING
+        )));
     }
 
     /**
@@ -206,13 +194,11 @@ public class GameplayScreen extends BorderPane implements IScreenController {
      */
     private void handleBuildingConstructionProgress(BuildingEvents.BuildingConstructionProgressEvent event) {
         if (event.getNewProgress() >= 75 && event.getPreviousProgress() < 75) {
-            Platform.runLater(() -> {
-                eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
-                        event.getBuilding().getName(),
-                        "Construction 75% complete",
-                        NotificationEvents.NotificationType.INFO
-                ));
-            });
+            Platform.runLater(() -> eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
+                    event.getBuilding().getName(),
+                    "Construction 75% complete",
+                    NotificationEvents.NotificationType.INFO
+            )));
         }
     }
 
@@ -324,8 +310,8 @@ public class GameplayScreen extends BorderPane implements IScreenController {
 
         setCenter(contentBox);
 
-        gameControlBar = new GameControlBar(() -> {
-            Result<com.colonygenesis.core.TurnPhase> result = game.getTurnManager().advancePhase();
+        GameControlBar gameControlBar = new GameControlBar(() -> {
+            Result<TurnPhase> result = game.getTurnManager().advancePhase();
             if (result.isFailure()) {
                 eventBus.publish(NotificationEvents.Factory.error(
                         "Phase Advancement Failed",
@@ -415,7 +401,7 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private HBox createHeader() {
         resourceBar = new ResourceBar();
 
-        planetInfoLabel = new Label();
+        Label planetInfoLabel = new Label();
         planetInfoLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
         HBox.setMargin(planetInfoLabel, new Insets(0, 20, 0, 10));
 
@@ -474,6 +460,7 @@ public class GameplayScreen extends BorderPane implements IScreenController {
             );
         }
 
+        assert game != null;
         if (game.getCurrentTurn() == 1 && !hasShownInitially) {
             Platform.runLater(() -> mapView.resetView());
             hasShownInitially = true;

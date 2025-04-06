@@ -14,7 +14,6 @@ import javafx.scene.shape.Circle;
 public class ResourceDisplay extends HBox {
     private final ResourceType resourceType;
     private final Label valueLabel;
-    private final Circle resourceIcon;
     private int currentAmount = 0;
     private int currentCapacity = 0;
     private int currentProduction = 0;
@@ -34,7 +33,7 @@ public class ResourceDisplay extends HBox {
         getStyleClass().add(AppTheme.STYLE_RESOURCE_ITEM);
 
         // Create resource icon
-        resourceIcon = new Circle(8);
+        Circle resourceIcon = new Circle(8);
         resourceIcon.setFill(resourceType.getColor());
         resourceIcon.getStyleClass().add(AppTheme.STYLE_RESOURCE_ICON);
 

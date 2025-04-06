@@ -22,8 +22,6 @@ public class ResourceManager implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Game game;
-
     private final Map<ResourceType, Integer> resources;
     private final Map<ResourceType, Integer> capacity;
     private final Map<ResourceType, Integer> production;
@@ -40,8 +38,7 @@ public class ResourceManager implements Serializable {
      *
      * @param game The game
      */
-    public ResourceManager(Game game) {
-        this.game = game;
+    public ResourceManager() {
         LOGGER.fine("Initializing ResourceManager");
 
         this.eventBus = EventBus.getInstance();
@@ -213,25 +210,23 @@ public class ResourceManager implements Serializable {
         int cap = capacity.getOrDefault(type, 0);
 
         if (type.isStorable() && current + amount > cap) {
-            int previousAmount = current;
             resources.put(type, cap);
 
             int actualAdded = cap - current;
             LOGGER.warning(String.format("Resource %s at capacity: %d/%d. Wasted %d units",
                     type.getName(), cap, cap, amount - actualAdded));
 
-            eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, cap, previousAmount));
+            eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, cap, current));
 
             return Result.failure(String.format("Storage at capacity. Added %d of %d %s",
                     actualAdded, amount, type.getName()));
         } else {
-            int previousAmount = current;
             resources.put(type, current + amount);
 
             LOGGER.fine(String.format("Added %d %s. New total: %d",
                     amount, type.getName(), current + amount));
 
-            eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, current + amount, previousAmount));
+            eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, current + amount, current));
 
             return Result.success(amount);
         }
@@ -262,13 +257,12 @@ public class ResourceManager implements Serializable {
             return Result.failure(error);
         }
 
-        int previousAmount = current;
         resources.put(type, current - amount);
 
         LOGGER.fine(String.format("Removed %d %s. New total: %d",
                 amount, type.getName(), current - amount));
 
-        eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, current - amount, previousAmount));
+        eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, current - amount, current));
 
         return Result.success(amount);
     }
@@ -337,7 +331,6 @@ public class ResourceManager implements Serializable {
             return 0;
         }
 
-        int previousAssigned = assignedWorkers;
         assignedWorkers += actualAssigned;
 
         LOGGER.info(String.format("Assigned %d workers. Total assigned: %d, Available: %d",
@@ -365,7 +358,6 @@ public class ResourceManager implements Serializable {
             return 0;
         }
 
-        int previousAssigned = assignedWorkers;
         assignedWorkers -= actualRemoved;
 
         LOGGER.info(String.format("Unassigned %d workers. Total assigned: %d, Available: %d",
@@ -450,7 +442,6 @@ public class ResourceManager implements Serializable {
             if (type == ResourceType.POPULATION) continue;
 
             int net = getNetProduction(type);
-            int before = resources.get(type);
 
             if (net > 0) {
                 Result<Integer> result = addResource(type, net);
@@ -512,12 +503,8 @@ public class ResourceManager implements Serializable {
         ));
     }
 
-    public void setGame(Game game) {
-        this.game = game;
-    }
-
     @Serial
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException, IOException {
+    private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException {
         in.defaultReadObject();
         this.eventBus = EventBus.getInstance();
         LOGGER.info("ResourceManager deserialized and transient fields reinitialized");

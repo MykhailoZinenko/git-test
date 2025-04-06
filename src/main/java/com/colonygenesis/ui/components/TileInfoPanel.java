@@ -146,9 +146,7 @@ public class TileInfoPanel extends GamePanel {
      * Handles the tile selection event.
      */
     private void handleTileSelected(TileEvents.TileSelectedEvent event) {
-        Platform.runLater(() -> {
-            setTile(event.getTile());
-        });
+        Platform.runLater(() -> setTile(event.getTile()));
     }
 
     /**
@@ -343,8 +341,7 @@ public class TileInfoPanel extends GamePanel {
             workerSpinner.setVisible(true);
             assignWorkersButton.setVisible(true);
 
-            if (building instanceof ProductionBuilding) {
-                ProductionBuilding prod = (ProductionBuilding) building;
+            if (building instanceof ProductionBuilding prod) {
                 buildingInfoLabel.setText("Produces: " +
                         prod.getBaseOutputAmount() + " " +
                         prod.getPrimaryOutputType().getName() + " per turn\n" +
@@ -353,8 +350,7 @@ public class TileInfoPanel extends GamePanel {
                 buildingInfoLabel.setTextFill(Color.WHITE);
                 buildingInfoLabel.setVisible(true);
             }
-            else if (building instanceof HabitationBuilding) {
-                HabitationBuilding hab = (HabitationBuilding) building;
+            else if (building instanceof HabitationBuilding hab) {
                 buildingInfoLabel.setText("Population: " +
                         hab.getOccupied() + "/" + hab.getCapacity() + "\n" +
                         "Growth: " + hab.getPopulationGrowthRate() + " per turn\n" +

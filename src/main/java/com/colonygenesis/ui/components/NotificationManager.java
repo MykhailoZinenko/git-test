@@ -2,7 +2,6 @@ package com.colonygenesis.ui.components;
 
 import com.colonygenesis.ui.events.EventBus;
 import com.colonygenesis.ui.events.NotificationEvents;
-import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
@@ -10,12 +9,10 @@ import javafx.animation.SequentialTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
@@ -70,9 +67,7 @@ public class NotificationManager extends VBox {
      * Handles general game notifications.
      */
     private void handleGameNotification(NotificationEvents.GameNotificationEvent event) {
-        Platform.runLater(() -> {
-            addNotification(event);
-        });
+        Platform.runLater(() -> addNotification(event));
     }
 
     /**
@@ -144,7 +139,7 @@ public class NotificationManager extends VBox {
         );
 
         activeNotifications.add(toast);
-        getChildren().add(0, toast);
+        getChildren().addFirst(toast);
 
         toast.show(() -> {
             activeNotifications.remove(toast);

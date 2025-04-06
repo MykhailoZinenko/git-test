@@ -3,10 +3,6 @@ package com.colonygenesis.ui.events;
 import com.colonygenesis.building.AbstractBuilding;
 import com.colonygenesis.building.HabitationBuilding;
 import com.colonygenesis.map.Tile;
-import com.colonygenesis.resource.ResourceType;
-
-import java.util.EnumMap;
-import java.util.Map;
 
 /**
  * Event classes related to buildings.

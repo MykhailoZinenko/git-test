@@ -36,13 +36,9 @@ public class ResourceProducer extends ProductionBuilding {
 
         this.producerType = producerType;
 
-        for (Map.Entry<ResourceType, Integer> entry : producerType.getConstructionCost().entrySet()) {
-            constructionCost.put(entry.getKey(), entry.getValue());
-        }
+        constructionCost.putAll(producerType.getConstructionCost());
 
-        for (Map.Entry<ResourceType, Integer> entry : producerType.getMaintenanceCost().entrySet()) {
-            maintenanceCost.put(entry.getKey(), entry.getValue());
-        }
+        maintenanceCost.putAll(producerType.getMaintenanceCost());
 
         if (location != null) {
             TerrainType terrain = location.getTerrainType();
@@ -59,16 +55,12 @@ public class ResourceProducer extends ProductionBuilding {
 
     @Override
     protected void initializeConstructionCost() {
-        for (Map.Entry<ResourceType, Integer> entry : producerType.getConstructionCost().entrySet()) {
-            constructionCost.put(entry.getKey(), entry.getValue());
-        }
+        constructionCost.putAll(producerType.getConstructionCost());
     }
 
     @Override
     protected void initializeMaintenanceCost() {
-        for (Map.Entry<ResourceType, Integer> entry : producerType.getMaintenanceCost().entrySet()) {
-            maintenanceCost.put(entry.getKey(), entry.getValue());
-        }
+        maintenanceCost.putAll(producerType.getMaintenanceCost());
     }
 
     @Override

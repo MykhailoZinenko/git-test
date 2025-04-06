@@ -22,7 +22,6 @@ public class ScreenManager {
     private static ScreenManager instance;
 
     private Stage primaryStage;
-    private Scene scene;
     private IScreenController currentScreen;
     private final Map<GameState, IScreenController> screens = new HashMap<>();
     private final StackPane rootPane = new StackPane();
@@ -54,7 +53,6 @@ public class ScreenManager {
     public void initialize(Stage primaryStage, Scene scene) {
         LOGGER.info("Initializing ScreenManager with primary stage and scene");
         this.primaryStage = primaryStage;
-        this.scene = scene;
 
         scene.setRoot(rootPane);
     }

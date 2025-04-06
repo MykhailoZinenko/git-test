@@ -1,6 +1,5 @@
 package com.colonygenesis.building;
 
-import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceManager;
 import com.colonygenesis.resource.ResourceType;
