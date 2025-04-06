@@ -96,8 +96,28 @@ public class EventBus {
      * Clears all subscribers.
      * Mainly used for testing or when shutting down the application.
      */
-    public void clear() {
-        LOGGER.info("Clearing all event subscribers");
+    public void reset() {
+        LOGGER.info("Resetting EventBus - clearing all subscribers");
         subscribers.clear();
+    }
+
+    /**
+     * Unsubscribes all event handlers registered by a specific object.
+     *
+     * @param subscriber The subscriber object to unsubscribe
+     */
+    public void unsubscribeAll(Object subscriber) {
+        LOGGER.info("Unsubscribing all events for: " + subscriber.getClass().getSimpleName());
+
+        for (Map.Entry<Class<? extends GameEvent>, List<EventHandler<? extends GameEvent>>> entry : subscribers.entrySet()) {
+            List<EventHandler<? extends GameEvent>> handlers = entry.getValue();
+            handlers.removeIf(handler -> {
+                return handler.toString().contains(subscriber.getClass().getName());
+            });
+
+            if (handlers.isEmpty()) {
+                subscribers.remove(entry.getKey());
+            }
+        }
     }
 }

@@ -171,9 +171,15 @@ public class GameSetupScreen extends BorderPane implements IScreenController {
                 ", planet type: " + planetType +
                 ", map size: " + mapSize);
 
+        Game.cleanup();
+
         Game game = new Game();
         game.initialize(colonyName, planetType, mapSize);
         game.start();
+
+        ScreenManager.getInstance().setCurrentGame(game);
+
+        ScreenManager.getInstance().removeScreen(GameState.GAMEPLAY);
 
         GameplayScreen gameplayScreen = new GameplayScreen(game);
         ScreenManager.getInstance().registerScreen(GameState.GAMEPLAY, gameplayScreen);

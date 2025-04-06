@@ -4,6 +4,7 @@ import com.colonygenesis.map.HexGrid;
 import com.colonygenesis.map.TerrainType;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.ui.debug.DebugOverlay;
+import com.colonygenesis.ui.events.BuildingEvents;
 import com.colonygenesis.ui.events.EventBus;
 import com.colonygenesis.ui.events.TileEvents;
 import com.colonygenesis.util.LoggerUtil;
@@ -29,7 +30,7 @@ public class MapView extends Pane {
     private final Canvas canvas;
     private final GraphicsContext gc;
     private HexGrid grid;
-    private final EventBus eventBus = EventBus.getInstance();
+    private final EventBus eventBus;
 
     private final double hexSize = 30.0;
 
@@ -59,6 +60,7 @@ public class MapView extends Pane {
         getChildren().add(canvas);
 
         gc = canvas.getGraphicsContext2D();
+        eventBus = EventBus.getInstance();
 
         setOnMousePressed(this::handleMousePressed);
         setOnMouseDragged(this::handleMouseDragged);
@@ -70,13 +72,26 @@ public class MapView extends Pane {
         widthProperty().addListener((obs, oldVal, newVal) -> draw());
         heightProperty().addListener((obs, oldVal, newVal) -> draw());
 
-        eventBus.subscribe(TileEvents.TileUpdatedEvent.class, event -> {
-            if (event.getTile() == selectedTile) {
-                draw();
-            }
-        });
+        initializeEventSubscriptions();
+    }
 
-        eventBus.subscribe(TileEvents.RefreshMapEvent.class, event -> draw());
+    /**
+     * Initializes all event subscriptions for reactive updates.
+     */
+    private void initializeEventSubscriptions() {
+        eventBus.subscribe(TileEvents.TileUpdatedEvent.class, this::handleTileUpdated);
+        eventBus.subscribe(TileEvents.RefreshMapEvent.class, this::handleRefreshMap);
+
+        eventBus.subscribe(BuildingEvents.BuildingPlacedEvent.class, event ->
+                Platform.runLater(() -> renderTile(event.getTile())));
+        eventBus.subscribe(BuildingEvents.BuildingCompletedEvent.class, event ->
+                Platform.runLater(() -> renderTile(event.getTile())));
+        eventBus.subscribe(BuildingEvents.BuildingActivatedEvent.class, event ->
+                Platform.runLater(() -> renderTile(event.getTile())));
+        eventBus.subscribe(BuildingEvents.BuildingDeactivatedEvent.class, event ->
+                Platform.runLater(() -> renderTile(event.getTile())));
+        eventBus.subscribe(BuildingEvents.BuildingConstructionProgressEvent.class, event ->
+                Platform.runLater(() -> renderTile(event.getBuilding().getLocation())));
     }
 
     /**
@@ -103,6 +118,24 @@ public class MapView extends Pane {
     public void setSelectedTile(Tile tile) {
         this.selectedTile = tile;
         draw();
+    }
+
+    /**
+     * Handles the tile updated event.
+     */
+    private void handleTileUpdated(TileEvents.TileUpdatedEvent event) {
+        Platform.runLater(() -> {
+            renderTile(event.getTile());
+        });
+    }
+
+    /**
+     * Handles the refresh map event.
+     */
+    private void handleRefreshMap(TileEvents.RefreshMapEvent event) {
+        Platform.runLater(() -> {
+            draw();
+        });
     }
 
     /**
@@ -308,6 +341,29 @@ public class MapView extends Pane {
     }
 
     /**
+     * Renders a specific tile.
+     */
+    public void renderTile(Tile tile) {
+        if (tile == null || getWidth() <= 0 || getHeight() <= 0 || grid == null) return;
+
+        gc.save();
+        gc.translate(translateX, translateY);
+        gc.scale(scale, scale);
+
+        drawHexagon(tile);
+
+        gc.restore();
+    }
+
+    /**
+     * Public method to re-render the entire grid.
+     * Used by external components.
+     */
+    public void renderGrid() {
+        draw();
+    }
+
+    /**
      * Draws a hexagon for the specified tile.
      */
     private void drawHexagon(Tile tile) {
@@ -338,14 +394,22 @@ public class MapView extends Pane {
         } else {
             gc.setFill(terrainType.getColor());
 
-            if (tile == selectedTile) {
+            boolean isSelected = (selectedTile != null &&
+                    selectedTile.getX() == tile.getX() &&
+                    selectedTile.getY() == tile.getY());
+
+            boolean isHovered = (hoveredTile != null &&
+                    hoveredTile.getX() == tile.getX() &&
+                    hoveredTile.getY() == tile.getY());
+
+            if (isSelected) {
                 gc.setStroke(Color.WHITE);
                 gc.setLineWidth(2);
-            } else if (tile == hoveredTile) {
+            } else if (isHovered) {
                 gc.setStroke(Color.YELLOW);
                 gc.setLineWidth(1.5);
             } else if (tile.isColonized()) {
-                gc.setStroke(Color.LIGHTGREEN);
+                gc.setStroke(Color.rgb(255, 255, 255, 0.7));
                 gc.setLineWidth(1.5);
             } else {
                 gc.setStroke(Color.rgb(80, 80, 100));
@@ -364,15 +428,35 @@ public class MapView extends Pane {
         gc.fill();
         gc.stroke();
 
-        if (tile.isRevealed() && tile.isColonized()) {
-            gc.setFill(Color.rgb(255, 255, 255, 0.7));
-            gc.fillOval(centerX - hexSize/4, centerY - hexSize/4, hexSize/2, hexSize/2);
-        }
+        if (tile.isRevealed()) {
+            if (tile.isColonized()) {
+                gc.setFill(Color.rgb(255, 255, 255, 0.8));  // Increased opacity
+                gc.fillOval(centerX - hexSize/3.5, centerY - hexSize/3.5, hexSize/1.75, hexSize/1.75);  // Larger indicator
 
-        if (scale > 1.5 && tile.isRevealed()) {
-            gc.setFill(Color.WHITE);
-            gc.setTextAlign(TextAlignment.CENTER);
-            gc.fillText(gridX + "," + gridY, centerX, centerY);
+                if (tile.hasBuilding()) {
+                    if (tile.getBuilding().isComplete()) {
+                        if (tile.getBuilding().isActive()) {
+                            gc.setFill(Color.rgb(50, 200, 50, 0.8));  // Green for active
+                        } else {
+                            gc.setFill(Color.rgb(200, 50, 50, 0.8));  // Red for inactive
+                        }
+                        gc.fillRect(centerX - hexSize/3, centerY - hexSize/3, hexSize/1.5, hexSize/1.5);
+                    } else {
+                        gc.setFill(Color.rgb(255, 165, 0, 0.8));  // Orange for construction
+                        gc.fillRect(centerX - hexSize/3, centerY - hexSize/3, hexSize/1.5, hexSize/1.5);
+
+                        double progress = tile.getBuilding().getConstructionProgress() / 100.0;
+                        gc.setFill(Color.rgb(50, 200, 50, 0.6));  // Green for progress
+                        gc.fillRect(centerX - hexSize/3, centerY - hexSize/3, hexSize/1.5 * progress, hexSize/1.5);
+                    }
+                }
+            }
+
+            if (scale > 1.5) {
+                gc.setFill(Color.WHITE);
+                gc.setTextAlign(TextAlignment.CENTER);
+                gc.fillText(gridX + "," + gridY, centerX, centerY);
+            }
         }
     }
 
@@ -406,5 +490,16 @@ public class MapView extends Pane {
     public void resize(double width, double height) {
         super.resize(width, height);
         draw();
+    }
+
+    public void dispose() {
+        LOGGER.fine("Disposing MapView resources");
+
+        eventBus.unsubscribeAll(this);
+
+        grid = null;
+        selectedTile = null;
+        hoveredTile = null;
+        debugOverlay = null;
     }
 }

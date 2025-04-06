@@ -2,6 +2,8 @@ package com.colonygenesis.map;
 
 import com.colonygenesis.core.Game;
 import com.colonygenesis.resource.ResourceType;
+import com.colonygenesis.ui.events.EventBus;
+import com.colonygenesis.ui.events.TileEvents;
 import com.colonygenesis.util.LoggerUtil;
 import com.colonygenesis.util.Result;
 
@@ -97,6 +99,11 @@ public class ColonizationManager implements Serializable {
             return Result.failure("Invalid tile coordinates");
         }
 
+        LOGGER.fine("Checking if tile at (" + x + "," + y + ") can be colonized. Current state: " +
+                "isColonized=" + tile.isColonized() +
+                ", isHabitable=" + tile.isHabitable() +
+                ", canColonize=" + grid.canColonize(tile));
+
         if (tile.isColonized()) {
             return Result.failure("Tile is already colonized");
         }
@@ -126,8 +133,11 @@ public class ColonizationManager implements Serializable {
      * Attempts to colonize a tile, consuming the required resources.
      */
     public Result<Boolean> colonizeTile(int x, int y) {
+        LOGGER.info("Attempting to colonize tile at (" + x + "," + y + ")");
+
         Result<Boolean> canColonize = canColonizeTile(x, y);
         if (canColonize.isFailure()) {
+            LOGGER.warning("Cannot colonize tile at (" + x + "," + y + "): " + canColonize.getErrorMessage());
             return canColonize;
         }
 
@@ -135,6 +145,8 @@ public class ColonizationManager implements Serializable {
         if (tile == null) {
             return Result.failure("Invalid tile coordinates");
         }
+
+        LOGGER.info("Pre-colonization state of tile (" + x + "," + y + "): " + tile);
 
         Map<ResourceType, Integer> cost = getColonizationCost(x, y);
         for (Map.Entry<ResourceType, Integer> entry : cost.entrySet()) {
@@ -151,7 +163,11 @@ public class ColonizationManager implements Serializable {
         tile.setColonized(true);
         grid.revealTileAndNeighbors(x, y);
 
-        LOGGER.info("Colonized tile at (" + x + ", " + y + "): " + tile.getTerrainType());
+        LOGGER.info("Colonized tile at (" + x + "," + y + "): " + tile);
+
+        EventBus.getInstance().publish(new TileEvents.TileUpdatedEvent(tile));
+        EventBus.getInstance().publish(new TileEvents.RefreshMapEvent());
+
         return Result.success(true);
     }
 }

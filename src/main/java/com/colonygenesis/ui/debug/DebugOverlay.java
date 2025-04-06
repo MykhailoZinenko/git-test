@@ -1,6 +1,10 @@
 package com.colonygenesis.ui.debug;
 
 import com.colonygenesis.core.Game;
+import com.colonygenesis.ui.events.BuildingEvents;
+import com.colonygenesis.ui.events.ColonyEvents;
+import com.colonygenesis.ui.events.EventBus;
+import com.colonygenesis.ui.events.TurnEvents;
 import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.animation.Animation;
@@ -39,6 +43,7 @@ public class DebugOverlay extends VBox {
     private final Game game;
     private final Map<DebugSection, VBox> sections = new HashMap<>();
     private final Timeline updateTimeline;
+    private final EventBus eventBus;
 
     // FPS tracking
     private long lastFrameTime = System.nanoTime();
@@ -69,6 +74,7 @@ public class DebugOverlay extends VBox {
      */
     public DebugOverlay(Game game) {
         this.game = game;
+        this.eventBus = EventBus.getInstance();
 
         getStyleClass().add("debug-overlay");
         setStyle("-fx-background-color: rgba(0, 0, 0, 0.7); -fx-background-radius: 5;");
@@ -87,7 +93,27 @@ public class DebugOverlay extends VBox {
         updateTimeline = new Timeline(new KeyFrame(Duration.millis(UPDATE_INTERVAL_MS), e -> updateMetrics()));
         updateTimeline.setCycleCount(Animation.INDEFINITE);
 
+        initializeEventSubscriptions();
+
         LOGGER.fine("Debug overlay initialized");
+    }
+
+    /**
+     * Initialize subscriptions to relevant events.
+     */
+    private void initializeEventSubscriptions() {
+        eventBus.subscribe(TurnEvents.TurnAdvancedEvent.class, event ->
+                Platform.runLater(this::updateGameStateMetrics));
+        eventBus.subscribe(TurnEvents.PhaseChangedEvent.class, event ->
+                Platform.runLater(this::updateGameStateMetrics));
+
+        eventBus.subscribe(BuildingEvents.BuildingPlacedEvent.class, event ->
+                Platform.runLater(this::updateBuildingMetrics));
+        eventBus.subscribe(BuildingEvents.BuildingCompletedEvent.class, event ->
+                Platform.runLater(this::updateBuildingMetrics));
+
+        eventBus.subscribe(ColonyEvents.PopulationChangedEvent.class, event ->
+                Platform.runLater(this::updateGameStateMetrics));
     }
 
     /**
@@ -248,11 +274,6 @@ public class DebugOverlay extends VBox {
         int visibleHexes = 0;
         int totalHexes = 0;
         double renderTimeMs = 0;
-
-        Platform.runLater(() -> {
-            renderTimeLabel.setText("Render Time: " + df.format(renderTimeMs) + " ms");
-            renderStatsLabel.setText("Visible Hexes: " + visibleHexes + "/" + totalHexes);
-        });
     }
 
     /**
@@ -262,11 +283,28 @@ public class DebugOverlay extends VBox {
         if (game != null && game.isInitialized()) {
             int turn = game.getCurrentTurn();
             String phase = game.getTurnManager().getCurrentPhase().getName();
-            int entityCount = 0;
+            int entityCount = game.getBuildingManager().getBuildingCount();
 
             Platform.runLater(() -> {
                 gameStateLabel.setText("Turn: " + turn + ", Phase: " + phase);
                 entityCountLabel.setText("Buildings: " + entityCount);
+            });
+        }
+    }
+
+    /**
+     * Updates building-related metrics.
+     */
+    private void updateBuildingMetrics() {
+        if (game != null && game.isInitialized()) {
+            int buildingCount = game.getBuildingManager().getBuildingCount();
+            int constructionCount = game.getBuildingManager().getBuildingsUnderConstructionCount();
+            int activeCount = game.getBuildingManager().getActiveBuildings();
+
+            Platform.runLater(() -> {
+                entityCountLabel.setText("Buildings: " + buildingCount +
+                        " (Active: " + activeCount +
+                        ", Building: " + constructionCount + ")");
             });
         }
     }

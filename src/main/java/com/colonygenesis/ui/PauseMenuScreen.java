@@ -26,20 +26,25 @@ import java.util.logging.Logger;
 public class PauseMenuScreen extends StackPane implements IScreenController {
     private static final Logger LOGGER = LoggerUtil.getLogger(PauseMenuScreen.class);
 
-    private final Game game;
+    private final ScreenManager screenManager;
     private BorderPane gameplayPane;
+    private Label titleLabel;
+    private Label infoLabel;
 
     /**
      * Constructs a new pause menu screen for the specified game.
      *
      * @param game The current game
      */
-    public PauseMenuScreen(Game game) {
-        this.game = game;
+    /**
+     * Constructs a new pause menu screen.
+     */
+    public PauseMenuScreen() {
+        this.screenManager = ScreenManager.getInstance();
 
         setStyle("-fx-background-color: rgba(16, 20, 36, 0.75);");
 
-        LOGGER.info("Creating pause menu for game: " + game.getColonyName());
+        LOGGER.info("Creating pause menu");
         initializeUI();
     }
 
@@ -55,11 +60,10 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
         menuContainer.setMaxWidth(400);
         menuContainer.setMaxHeight(500);
 
-        Label titleLabel = new Label("Game Paused");
+        titleLabel = new Label("Game Paused");
         titleLabel.getStyleClass().add(AppTheme.STYLE_TITLE);
 
-        Label infoLabel = new Label("Turn: " + game.getCurrentTurn() + " - Phase: " +
-                game.getTurnManager().getCurrentPhase().getName());
+        infoLabel = new Label("");
         infoLabel.getStyleClass().add(AppTheme.STYLE_SUBTITLE);
 
         Button resumeButton = createMenuButton("Resume Game");
@@ -71,24 +75,30 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
 
         resumeButton.setOnAction(e -> {
             LOGGER.info("Resuming game");
-            ScreenManager.getInstance().activateScreen(GameState.GAMEPLAY);
+            screenManager.activateScreen(GameState.GAMEPLAY);
         });
 
         saveButton.setOnAction(e -> {
             LOGGER.info("Saving game");
-            String saveFile = game.saveGame();
-            if (saveFile != null) {
-                LOGGER.info("Game saved successfully to: " + saveFile);
-                DialogUtil.showMessageDialog("Game Saved", "Game saved successfully to: " + saveFile);
+            Game currentGame = screenManager.getCurrentGame();
+            if (currentGame != null) {
+                String saveFile = currentGame.saveGame();
+                if (saveFile != null) {
+                    LOGGER.info("Game saved successfully to: " + saveFile);
+                    DialogUtil.showMessageDialog("Game Saved", "Game saved successfully to: " + saveFile);
+                } else {
+                    LOGGER.severe("Failed to save game");
+                    DialogUtil.showMessageDialog("Save Failed", "Failed to save the game. Please try again.");
+                }
             } else {
-                LOGGER.severe("Failed to save game");
-                DialogUtil.showMessageDialog("Save Failed", "Failed to save the game. Please try again.");
+                LOGGER.severe("Cannot save: No current game");
+                DialogUtil.showMessageDialog("Save Failed", "No active game to save.");
             }
         });
 
         loadButton.setOnAction(e -> {
             LOGGER.info("Loading saved game");
-            ScreenManager.getInstance().activateScreen(GameState.LOAD_GAME);
+            screenManager.activateScreen(GameState.LOAD_GAME);
         });
 
         settingsButton.setOnAction(e -> {
@@ -99,19 +109,25 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
         exitButton.setOnAction(e -> {
             LOGGER.info("Save and exit requested");
 
-            DialogUtil.showConfirmDialog(
-                    "Exit to Main Menu",
-                    "Do you want to save your game before exiting to the main menu?",
-                    () -> {
-                        // Yes - Save and exit
-                        game.saveGame();
-                        ScreenManager.getInstance().activateScreen(GameState.MAIN_MENU);
-                    },
-                    () -> {
-                        // No - Just exit without saving
-                        ScreenManager.getInstance().activateScreen(GameState.MAIN_MENU);
-                    }
-            );
+            Game currentGame = screenManager.getCurrentGame();
+            if (currentGame != null) {
+                DialogUtil.showConfirmDialog(
+                        "Exit to Main Menu",
+                        "Do you want to save your game before exiting to the main menu?",
+                        () -> {
+                            // Yes - Save and exit
+                            currentGame.saveGame();
+                            screenManager.activateScreen(GameState.MAIN_MENU);
+                        },
+                        () -> {
+                            // No - Just exit without saving
+                            screenManager.activateScreen(GameState.MAIN_MENU);
+                        }
+                );
+            } else {
+                // No game to save
+                screenManager.activateScreen(GameState.MAIN_MENU);
+            }
         });
 
         menuContainer.getChildren().addAll(
@@ -138,6 +154,20 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
         slideIn.setToY(0);
 
         menuContainer.setUserData((Runnable) () -> {
+            Game currentGame = screenManager.getCurrentGame();
+            if (currentGame != null) {
+                String gameInfo = "Turn: " + currentGame.getTurnManager().getTurnNumber() +
+                        " - Phase: " + currentGame.getTurnManager().getCurrentPhase().getName() +
+                        "\nColony: " + currentGame.getColonyName();
+                infoLabel.setText(gameInfo);
+
+                LOGGER.info("Showing pause menu for " + currentGame.getColonyName() +
+                        " on turn " + currentGame.getTurnManager().getTurnNumber());
+            } else {
+                infoLabel.setText("No active game");
+                LOGGER.warning("No current game available for pause menu");
+            }
+
             fadeIn.play();
             slideIn.play();
         });
@@ -178,6 +208,14 @@ public class PauseMenuScreen extends StackPane implements IScreenController {
     @Override
     public void onShow() {
         LOGGER.fine("PauseMenuScreen shown");
+
+        if (screenManager.getCurrentGame() != null) {
+            infoLabel.setText("Turn: " + screenManager.getCurrentGame().getTurnManager().getTurnNumber() +
+                    " - Phase: " + screenManager.getCurrentGame().getTurnManager().getCurrentPhase().getName() +
+                    " - Colony: " + screenManager.getCurrentGame().getColonyName());
+            LOGGER.info("Showing pause menu for " + screenManager.getCurrentGame().getColonyName() +
+                    " on turn " + screenManager.getCurrentGame().getTurnManager().getTurnNumber());
+        }
 
         for (javafx.scene.Node child : getChildren()) {
             if (child.getUserData() instanceof Runnable) {

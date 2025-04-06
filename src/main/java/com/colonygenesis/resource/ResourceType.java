@@ -12,9 +12,9 @@ public enum ResourceType {
     MATERIALS("Materials", "Used for construction and maintenance", Color.BROWN, true, true),
     WATER("Water", "Essential for life support and agriculture", Color.LIGHTBLUE, true, true),
     RESEARCH("Research", "Advances technology", Color.PURPLE, true, false),
-
     RARE_MINERALS("Rare Minerals", "Advanced construction material", Color.SILVER, false, true),
-    ALIEN_COMPOUNDS("Alien Compounds", "Mysterious alien substances", Color.MAGENTA, false, true);
+    ALIEN_COMPOUNDS("Alien Compounds", "Mysterious alien substances", Color.MAGENTA, false, true),
+    POPULATION("Population", "Colonists who operate buildings", Color.rgb(230, 180, 180), true, true, true);
 
     private final String name;
     private final String description;
@@ -32,7 +32,7 @@ public enum ResourceType {
      * @param basic Whether this is a basic resource
      * @param storable Whether this resource can be stored
      */
-    ResourceType(String name, String description, Color color, boolean basic, boolean storable) {
+    ResourceType(String name, String description, Color color, boolean basic, boolean storable, boolean isPopulation) {
         this.name = name;
         this.description = description;
         this.color = color;
@@ -40,7 +40,9 @@ public enum ResourceType {
         this.storable = storable;
 
         if (storable) {
-            if (basic) {
+            if (isPopulation) {
+                this.baseStorage = 10; // Default population capacity
+            } else if (basic) {
                 this.baseStorage = 1000;
             } else {
                 this.baseStorage = 500;
@@ -48,6 +50,10 @@ public enum ResourceType {
         } else {
             this.baseStorage = 0;
         }
+    }
+
+    ResourceType(String name, String description, Color color, boolean basic, boolean storable) {
+        this(name, description, color, basic, storable, false);
     }
 
     /**
@@ -118,7 +124,17 @@ public enum ResourceType {
             case WATER -> "Water Tank";
             case RARE_MINERALS -> "Secure Vault";
             case ALIEN_COMPOUNDS -> "Containment Facility";
+            case POPULATION -> "Habitation";
             default -> "No storage building";
         };
+    }
+
+    /**
+     * Checks if this resource is population.
+     *
+     * @return true if this is the population resource, false otherwise
+     */
+    public boolean isPopulation() {
+        return this.name.equals("Population");
     }
 }

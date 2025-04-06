@@ -1,43 +1,70 @@
 package com.colonygenesis.ui.components;
 
+import com.colonygenesis.building.AbstractBuilding;
+import com.colonygenesis.building.HabitationBuilding;
+import com.colonygenesis.building.ProductionBuilding;
+import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceType;
+import com.colonygenesis.ui.ScreenManager;
+import com.colonygenesis.ui.events.BuildingEvents;
 import com.colonygenesis.ui.events.EventBus;
+import com.colonygenesis.ui.events.NotificationEvents;
 import com.colonygenesis.ui.events.TileEvents;
 import com.colonygenesis.ui.styling.AppTheme;
+import com.colonygenesis.util.LoggerUtil;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Panel that displays information about a selected tile.
  */
 public class TileInfoPanel extends GamePanel {
+    private static final Logger LOGGER = LoggerUtil.getLogger(TileInfoPanel.class);
+
+    private final Game game;
+    private final EventBus eventBus;
 
     private final VBox contentBox;
+
     private final Label titleLabel;
     private final Label positionLabel;
     private final Label descriptionLabel;
     private final Label statusLabel;
     private final VBox resourcesBox;
+
     private final Button colonizeButton;
+    private final Button buildButton;
+
+    private VBox buildingBox;
+    private Label buildingStatusLabel;
+    private ProgressBar constructionProgress;
+    private Spinner<Integer> workerSpinner;
+    private Button assignWorkersButton;
+    private Label buildingInfoLabel;
 
     private Tile selectedTile;
     private Map<ResourceType, Integer> colonizationCost;
-    private final EventBus eventBus = EventBus.getInstance();
 
     /**
      * Constructs a new tile info panel.
      */
-    public TileInfoPanel() {
+    public TileInfoPanel(Game game) {
         super("Tile Information");
+
+        this.game = game;
+        this.eventBus = EventBus.getInstance();
 
         setStyle("-fx-background-color: rgba(28, 35, 64, 0.95);");
 
@@ -73,6 +100,16 @@ public class TileInfoPanel extends GamePanel {
             }
         });
 
+        buildButton = new Button("Build Structure");
+        buildButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_PRIMARY);
+        buildButton.setPrefWidth(200);
+        buildButton.setVisible(false);
+        buildButton.setOnAction(e -> {
+            if (selectedTile != null) {
+                showBuildingSelectionDialog();
+            }
+        });
+
         contentBox.getChildren().addAll(
                 titleLabel,
                 positionLabel,
@@ -81,30 +118,262 @@ public class TileInfoPanel extends GamePanel {
                 new Separator(),
                 statusLabel,
                 resourcesBox,
-                colonizeButton
+                colonizeButton,
+                buildButton
         );
 
+        initializeBuildingUI();
+
+        initializeEventSubscriptions();
+    }
+
+    /**
+     * Subscribes to events for reactive updates.
+     */
+    private void initializeEventSubscriptions() {
         eventBus.subscribe(TileEvents.TileSelectedEvent.class, this::handleTileSelected);
 
         eventBus.subscribe(TileEvents.TileUpdatedEvent.class, this::handleTileUpdated);
+
+        eventBus.subscribe(BuildingEvents.BuildingCompletedEvent.class, this::handleBuildingCompleted);
+        eventBus.subscribe(BuildingEvents.BuildingActivatedEvent.class, this::handleBuildingActivated);
+        eventBus.subscribe(BuildingEvents.BuildingDeactivatedEvent.class, this::handleBuildingDeactivated);
+        eventBus.subscribe(BuildingEvents.WorkersAssignedEvent.class, this::handleWorkersAssigned);
+        eventBus.subscribe(BuildingEvents.BuildingConstructionProgressEvent.class, this::handleConstructionProgress);
     }
 
     /**
-     * Handles tile selection events.
+     * Handles the tile selection event.
      */
     private void handleTileSelected(TileEvents.TileSelectedEvent event) {
-        setTile(event.getTile());
+        Platform.runLater(() -> {
+            setTile(event.getTile());
+        });
     }
 
     /**
-     * Handles tile updated events.
+     * Handles the tile update event.
      */
     private void handleTileUpdated(TileEvents.TileUpdatedEvent event) {
-        if (selectedTile != null && event.getTile() != null &&
-                selectedTile.getX() == event.getTile().getX() &&
-                selectedTile.getY() == event.getTile().getY()) {
+        Platform.runLater(() -> {
+            if (selectedTile != null && selectedTile.equals(event.getTile())) {
+                setTile(event.getTile());
+            }
+        });
+    }
 
-            setTile(event.getTile());
+    /**
+     * Handles the building completed event.
+     */
+    private void handleBuildingCompleted(BuildingEvents.BuildingCompletedEvent event) {
+        Platform.runLater(() -> {
+            if (selectedTile != null && selectedTile.equals(event.getTile())) {
+                updateBuildingInfo();
+            }
+        });
+    }
+
+    /**
+     * Handles the building activated event.
+     */
+    private void handleBuildingActivated(BuildingEvents.BuildingActivatedEvent event) {
+        Platform.runLater(() -> {
+            if (selectedTile != null && selectedTile.equals(event.getTile())) {
+                updateBuildingInfo();
+            }
+        });
+    }
+
+    /**
+     * Handles the building deactivated event.
+     */
+    private void handleBuildingDeactivated(BuildingEvents.BuildingDeactivatedEvent event) {
+        Platform.runLater(() -> {
+            if (selectedTile != null && selectedTile.equals(event.getTile())) {
+                updateBuildingInfo();
+            }
+        });
+    }
+
+    /**
+     * Handles the workers assigned event.
+     */
+    private void handleWorkersAssigned(BuildingEvents.WorkersAssignedEvent event) {
+        Platform.runLater(() -> {
+            if (selectedTile != null && selectedTile.equals(event.getBuilding().getLocation())) {
+                updateBuildingInfo();
+            }
+        });
+    }
+
+    /**
+     * Handles the construction progress event.
+     */
+    private void handleConstructionProgress(BuildingEvents.BuildingConstructionProgressEvent event) {
+        Platform.runLater(() -> {
+            if (selectedTile != null && selectedTile.equals(event.getBuilding().getLocation())) {
+                updateBuildingInfo();
+            }
+        });
+    }
+
+    /**
+     * Initializes the UI components for displaying building information.
+     */
+    private void initializeBuildingUI() {
+        buildingBox = new VBox(10);
+        buildingBox.setPadding(new Insets(5, 0, 5, 0));
+        buildingBox.setVisible(false);
+
+        buildingStatusLabel = new Label("");
+        buildingStatusLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
+        buildingStatusLabel.setWrapText(true);
+
+        constructionProgress = new ProgressBar(0);
+        constructionProgress.setPrefWidth(200);
+        constructionProgress.getStyleClass().add("construction-progress");
+
+        HBox workerBox = new HBox(10);
+        workerBox.setAlignment(Pos.CENTER_LEFT);
+
+        Label workerLabel = new Label("Workers:");
+        workerLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
+
+        workerSpinner = new Spinner<>(0, 20, 0, 1);
+        workerSpinner.setEditable(true);
+        workerSpinner.setPrefWidth(70);
+
+        assignWorkersButton = new Button("Assign");
+        assignWorkersButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_PRIMARY);
+        assignWorkersButton.setOnAction(e -> assignWorkers());
+
+        workerBox.getChildren().addAll(workerLabel, workerSpinner, assignWorkersButton);
+
+        buildingInfoLabel = new Label("");
+        buildingInfoLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
+        buildingInfoLabel.setWrapText(true);
+
+        buildingBox.getChildren().addAll(
+                buildingStatusLabel,
+                constructionProgress,
+                workerBox,
+                buildingInfoLabel
+        );
+
+        contentBox.getChildren().add(buildingBox);
+    }
+
+    /**
+     * Assigns workers to the current building.
+     */
+    private void assignWorkers() {
+        if (selectedTile == null || !selectedTile.hasBuilding()) {
+            return;
+        }
+
+        AbstractBuilding building = selectedTile.getBuilding();
+        int desiredWorkers = workerSpinner.getValue();
+        int currentWorkers = building.getWorkersAssigned();
+
+        if (desiredWorkers > currentWorkers) {
+            int toAssign = desiredWorkers - currentWorkers;
+            building.setResourceManager(game.getResourceManager());
+            int assigned = building.assignWorkers(toAssign);
+
+            if (assigned < toAssign) {
+                buildingInfoLabel.setText("Not enough available workers!");
+                buildingInfoLabel.setTextFill(Color.ORANGE);
+
+                eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
+                        building.getName(),
+                        "Not enough available workers",
+                        NotificationEvents.NotificationType.WARNING
+                ));
+            } else {
+                eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
+                        building.getName(),
+                        "Assigned " + assigned + " workers",
+                        NotificationEvents.NotificationType.SUCCESS
+                ));
+            }
+        } else if (desiredWorkers < currentWorkers) {
+            int toRemove = currentWorkers - desiredWorkers;
+            int removed = building.removeWorkers(toRemove);
+
+            eventBus.publish(new NotificationEvents.BuildingNotificationEvent(
+                    building.getName(),
+                    "Removed " + removed + " workers",
+                    NotificationEvents.NotificationType.INFO
+            ));
+        }
+    }
+
+    /**
+     * Updates the building information display.
+     */
+    private void updateBuildingInfo() {
+        if (selectedTile == null || !selectedTile.hasBuilding()) {
+            buildingBox.setVisible(false);
+            return;
+        }
+
+        AbstractBuilding building = selectedTile.getBuilding();
+        buildingBox.setVisible(true);
+
+        if (building.isComplete()) {
+            constructionProgress.setVisible(false);
+
+            int efficiency = building.calculateEfficiency();
+            if (building.isActive()) {
+                if (efficiency < 100 && building.getWorkersRequired() > 0) {
+                    buildingStatusLabel.setText(building.getName() + " (Active - " + efficiency + "% efficiency)");
+                    buildingStatusLabel.setTextFill(Color.YELLOW);
+                } else {
+                    buildingStatusLabel.setText(building.getName() + " (Active)");
+                    buildingStatusLabel.setTextFill(Color.LIGHTGREEN);
+                }
+            } else {
+                buildingStatusLabel.setText(building.getName() + " (Inactive)");
+                buildingStatusLabel.setTextFill(Color.ORANGE);
+            }
+
+            workerSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                    0, building.getWorkersRequired(), building.getWorkersAssigned()
+            ));
+            workerSpinner.setVisible(true);
+            assignWorkersButton.setVisible(true);
+
+            if (building instanceof ProductionBuilding) {
+                ProductionBuilding prod = (ProductionBuilding) building;
+                buildingInfoLabel.setText("Produces: " +
+                        prod.getBaseOutputAmount() + " " +
+                        prod.getPrimaryOutputType().getName() + " per turn\n" +
+                        "Workers: " + prod.getWorkersAssigned() + "/" + prod.getWorkersRequired() + "\n" +
+                        "Efficiency: " + efficiency + "%");
+                buildingInfoLabel.setTextFill(Color.WHITE);
+                buildingInfoLabel.setVisible(true);
+            }
+            else if (building instanceof HabitationBuilding) {
+                HabitationBuilding hab = (HabitationBuilding) building;
+                buildingInfoLabel.setText("Population: " +
+                        hab.getOccupied() + "/" + hab.getCapacity() + "\n" +
+                        "Growth: " + hab.getPopulationGrowthRate() + " per turn\n" +
+                        "Comfort: " + (int)(hab.getComfortLevel() * 100) + "%");
+                buildingInfoLabel.setTextFill(Color.WHITE);
+                buildingInfoLabel.setVisible(true);
+            }
+
+        } else {
+            int progress = building.getConstructionProgress();
+            constructionProgress.setProgress(progress / 100.0);
+            constructionProgress.setVisible(true);
+
+            buildingStatusLabel.setText(building.getName() + " (Constructing: " + progress + "%)");
+            buildingStatusLabel.setTextFill(Color.ORANGE);
+
+            workerSpinner.setVisible(false);
+            assignWorkersButton.setVisible(false);
+            buildingInfoLabel.setVisible(false);
         }
     }
 
@@ -135,6 +404,8 @@ public class TileInfoPanel extends GamePanel {
             statusLabel.setText("");
             resourcesBox.getChildren().clear();
             colonizeButton.setVisible(false);
+            buildButton.setVisible(false);
+            buildingBox.setVisible(false);
             return;
         }
 
@@ -145,12 +416,24 @@ public class TileInfoPanel extends GamePanel {
         if (selectedTile.isColonized()) {
             statusLabel.setText("Status: Colonized");
             colonizeButton.setVisible(false);
+
+            if (selectedTile.hasBuilding()) {
+                buildButton.setVisible(false);
+                updateBuildingInfo();
+            } else {
+                buildButton.setVisible(true);
+                buildingBox.setVisible(false);
+            }
         } else if (!selectedTile.isHabitable()) {
             statusLabel.setText("Status: Not Habitable");
             colonizeButton.setVisible(false);
+            buildButton.setVisible(false);
+            buildingBox.setVisible(false);
         } else {
             statusLabel.setText("Status: Not Colonized");
             colonizeButton.setVisible(true);
+            buildButton.setVisible(false);
+            buildingBox.setVisible(false);
         }
 
         resourcesBox.getChildren().clear();
@@ -179,11 +462,51 @@ public class TileInfoPanel extends GamePanel {
             resourcesBox.getChildren().add(separator);
             resourcesBox.getChildren().add(costTitle);
 
+            boolean canAfford = true;
+
             for (Map.Entry<ResourceType, Integer> entry : colonizationCost.entrySet()) {
-                Label costLabel = new Label(entry.getKey().getName() + ": " + entry.getValue());
-                costLabel.setTextFill(Color.WHITE);
+                ResourceType type = entry.getKey();
+                int cost = entry.getValue();
+                int available = game.getResourceManager().getResource(type);
+
+                Label costLabel = new Label(type.getName() + ": " + cost);
+
+                if (cost > available) {
+                    costLabel.setTextFill(Color.RED);
+                    canAfford = false;
+                } else {
+                    costLabel.setTextFill(Color.LIGHTGREEN);
+                }
+
                 resourcesBox.getChildren().add(costLabel);
             }
+
+            colonizeButton.setDisable(!canAfford);
         }
+    }
+
+    /**
+     * Shows the building selection overlay.
+     */
+    private void showBuildingSelectionDialog() {
+        if (selectedTile == null || !selectedTile.isColonized()) {
+            return;
+        }
+
+        BuildingSelectionOverlay overlay = new BuildingSelectionOverlay(selectedTile);
+
+        StackPane rootPane = ScreenManager.getInstance().getRootPane();
+        rootPane.getChildren().add(overlay);
+
+        overlay.show();
+    }
+
+    public void dispose() {
+        LOGGER.fine("Disposing TileInfoPanel resources");
+
+        eventBus.unsubscribeAll(this);
+
+        selectedTile = null;
+        colonizationCost = null;
     }
 }

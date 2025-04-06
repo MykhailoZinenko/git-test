@@ -1,5 +1,6 @@
 package com.colonygenesis.ui;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.scene.Scene;
@@ -25,6 +26,7 @@ public class ScreenManager {
     private IScreenController currentScreen;
     private final Map<GameState, IScreenController> screens = new HashMap<>();
     private final StackPane rootPane = new StackPane();
+    private Game currentGame;
 
     /**
      * Private constructor to prevent instantiation from outside.
@@ -65,8 +67,29 @@ public class ScreenManager {
      */
     public void registerScreen(GameState gameState, IScreenController controller) {
         LOGGER.info("Registering screen for state: " + gameState);
+
+        removeScreen(gameState);
+
         screens.put(gameState, controller);
         controller.initialize();
+    }
+
+    /**
+     * Removes a screen and cleans up its resources.
+     *
+     * @param gameState The game state to remove
+     */
+    public void removeScreen(GameState gameState) {
+        IScreenController screen = screens.get(gameState);
+        if (screen != null) {
+            LOGGER.info("Removing screen: " + gameState);
+
+            if (screen instanceof GameplayScreen) {
+                ((GameplayScreen) screen).dispose();
+            }
+
+            screens.remove(gameState);
+        }
     }
 
     /**
@@ -168,5 +191,37 @@ public class ScreenManager {
      */
     public Stage getPrimaryStage() {
         return primaryStage;
+    }
+
+    /**
+     * Gets the current game instance.
+     *
+     * @return The current game, or null if not in gameplay
+     */
+    public Game getGame() {
+        if (getCurrentGameState() == GameState.GAMEPLAY && getCurrentScreen() instanceof GameplayScreen) {
+            return ((GameplayScreen) getCurrentScreen()).getGame();
+        }
+        return null;
+    }
+
+    /**
+     * Sets the current active game instance.
+     * All screens that need access to game data should use this reference.
+     *
+     * @param game The current game instance
+     */
+    public void setCurrentGame(Game game) {
+        LOGGER.info("Setting current game: " + (game != null ? game.getColonyName() : "null"));
+        this.currentGame = game;
+    }
+
+    /**
+     * Gets the current active game instance.
+     *
+     * @return The current game
+     */
+    public Game getCurrentGame() {
+        return currentGame;
     }
 }

@@ -3,16 +3,18 @@ package com.colonygenesis.ui;
 import com.colonygenesis.core.Game;
 import com.colonygenesis.core.GameState;
 import com.colonygenesis.ui.styling.AppTheme;
+import com.colonygenesis.util.DialogUtil;
 import com.colonygenesis.util.LoggerUtil;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -23,7 +25,7 @@ import java.util.logging.Logger;
 public class LoadGameScreen extends BorderPane implements IScreenController {
     private static final Logger LOGGER = LoggerUtil.getLogger(LoadGameScreen.class);
 
-    private ListView<Game.SaveGameInfo> savesList;
+    private TableView<Game.SaveGameInfo> savesList;
 
     /**
      * Constructs a new load game screen and initializes the UI components.
@@ -33,9 +35,6 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
         initializeUI();
     }
 
-    /**
-     * Initializes the UI components for the load game screen.
-     */
     private void initializeUI() {
         LOGGER.fine("Initializing LoadGameScreen UI");
 
@@ -48,9 +47,35 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
         Label titleLabel = new Label("Load Game");
         titleLabel.getStyleClass().add(AppTheme.STYLE_TITLE);
 
-        savesList = new ListView<>();
-        savesList.getStyleClass().add(AppTheme.STYLE_LIST_VIEW);
-        savesList.setPrefHeight(400);
+        TableView<Game.SaveGameInfo> savesTable = new TableView<>();
+        savesTable.getStyleClass().add(AppTheme.STYLE_TABLE_VIEW);
+        savesTable.setPrefHeight(400);
+
+        TableColumn<Game.SaveGameInfo, String> colonyColumn = new TableColumn<>("Colony");
+        colonyColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().colonyName()));
+        colonyColumn.setPrefWidth(150);
+
+        TableColumn<Game.SaveGameInfo, String> planetColumn = new TableColumn<>("Planet Type");
+        planetColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().planetType().getName()));
+        planetColumn.setPrefWidth(120);
+
+        TableColumn<Game.SaveGameInfo, Integer> turnColumn = new TableColumn<>("Turn");
+        turnColumn.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().turn()).asObject());
+        turnColumn.setPrefWidth(70);
+
+        TableColumn<Game.SaveGameInfo, String> mapSizeColumn = new TableColumn<>("Map Size");
+        mapSizeColumn.setCellValueFactory(data -> new SimpleStringProperty(
+                data.getValue().mapSize() + "x" + data.getValue().mapSize()));
+        mapSizeColumn.setPrefWidth(80);
+
+        TableColumn<Game.SaveGameInfo, String> dateColumn = new TableColumn<>("Save Date");
+        dateColumn.setCellValueFactory(data -> new SimpleStringProperty(
+                data.getValue().saveDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))));
+        dateColumn.setPrefWidth(150);
+
+        savesTable.getColumns().addAll(colonyColumn, planetColumn, turnColumn, mapSizeColumn, dateColumn);
+
+        this.savesList = savesTable;
 
         Button loadButton = new Button("Load Selected Game");
         loadButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_SUCCESS);
@@ -59,10 +84,10 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
         Button backButton = new Button("Back");
         backButton.getStyleClass().addAll(AppTheme.STYLE_BUTTON, AppTheme.STYLE_BUTTON_PRIMARY);
 
-        savesList.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+        savesTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             loadButton.setDisable(newVal == null);
             if (newVal != null) {
-                LOGGER.fine("Save game selected: " + newVal.colonyName());
+                LOGGER.fine("Save game selected: " + newVal.colonyName() + " Turn " + newVal.turn());
             }
         });
 
@@ -76,7 +101,7 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
         buttonBox.setAlignment(Pos.CENTER);
         buttonBox.getChildren().addAll(backButton, loadButton);
 
-        container.getChildren().addAll(titleLabel, savesList, buttonBox);
+        container.getChildren().addAll(titleLabel, savesTable, buttonBox);
 
         setCenter(container);
     }
@@ -89,8 +114,14 @@ public class LoadGameScreen extends BorderPane implements IScreenController {
         if (selected != null) {
             LOGGER.info("Loading game from: " + selected.filename());
 
+            Game.cleanup();
+
             Game loadedGame = Game.loadGame(selected.filename());
             if (loadedGame != null) {
+                ScreenManager.getInstance().setCurrentGame(loadedGame);
+
+                ScreenManager.getInstance().removeScreen(GameState.GAMEPLAY);
+
                 GameplayScreen gameplayScreen = new GameplayScreen(loadedGame);
                 ScreenManager.getInstance().registerScreen(GameState.GAMEPLAY, gameplayScreen);
                 ScreenManager.getInstance().activateScreen(GameState.GAMEPLAY);

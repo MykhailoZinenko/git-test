@@ -24,7 +24,15 @@ public class MapGenerator implements Serializable {
         LOGGER.info("Generating map for planet type: " + planetType + " with seed: " + seed);
 
         Random random = new Random(seed);
+
         HexGrid grid = new HexGrid(width, height);
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                Tile tile = new Tile(x, y, TerrainType.PLAINS);
+                grid.setTileAt(x, y, tile);
+            }
+        }
 
         PlanetType.TerrainDistribution distribution = planetType.getTerrainDistribution();
         SimplexNoise elevationNoise = new SimplexNoise(random.nextLong());
@@ -42,8 +50,12 @@ public class MapGenerator implements Serializable {
                     terrainType = distribution.getRandomTerrain(random);
                 }
 
-                Tile tile = new Tile(x, y, terrainType);
-                grid.setTileAt(x, y, tile);
+                Tile tile = grid.getTileAt(x, y);
+                tile.setTerrainType(terrainType);
+
+                tile.setColonized(false);
+                tile.setRevealed(false);
+                tile.setBuilding(null);
             }
         }
 

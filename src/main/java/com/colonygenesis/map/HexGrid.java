@@ -52,12 +52,10 @@ public class HexGrid implements Serializable {
         int x = tile.getX();
         int y = tile.getY();
 
-        // Determine neighbors based on hex grid topology
-        // For odd rows, the neighbors are shifted
-        boolean isOddRow = (y % 2 == 1);
+        boolean isOddColumn = (x % 2 == 1);
 
         int[][] directions;
-        if (isOddRow) {
+        if (!isOddColumn) {
             directions = new int[][] {
                     {0, -1},   // North
                     {1, -1},   // Northeast
@@ -125,6 +123,20 @@ public class HexGrid implements Serializable {
 
         for (Tile neighbor : getNeighbors(tile)) {
             neighbor.setRevealed(true);
+        }
+    }
+
+    /**
+     * Resets the grid state, clearing all tiles.
+     * This ensures a clean state when reusing a grid.
+     */
+    public void reset() {
+        LOGGER.fine("Resetting HexGrid state");
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                tiles[x][y] = null;
+            }
         }
     }
 }
