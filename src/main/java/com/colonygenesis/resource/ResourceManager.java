@@ -47,7 +47,6 @@ public class ResourceManager implements Serializable {
         lastTurnResources = new EnumMap<>(ResourceType.class);
 
         this.assignedWorkers = 0;
-        this.populationGrowthRate = 1;
 
         for (ResourceType type : ResourceType.values()) {
             resources.put(type, 0);
@@ -315,6 +314,110 @@ public class ResourceManager implements Serializable {
     }
 
     /**
+     * Adds to the production rate for a resource.
+     *
+     * @param type  The resource type
+     * @param amount The amount to add to production
+     * @return The new production value
+     */
+    public int addProduction(ResourceType type, int amount) {
+        if (type == null) {
+            throw new IllegalArgumentException("Resource type cannot be null");
+        }
+
+        int currentProduction = production.getOrDefault(type, 0);
+        int newProduction = currentProduction + amount;
+        production.put(type, newProduction);
+
+        LOGGER.fine(String.format("Added %d to %s production. New production: %d",
+                amount, type.getName(), newProduction));
+
+        eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, newProduction, currentProduction, true));
+
+        return newProduction;
+    }
+
+    /**
+     * Adds to the consumption rate for a resource.
+     *
+     * @param type  The resource type
+     * @param amount The amount to add to consumption
+     * @return The new consumption value
+     */
+    public int addConsumption(ResourceType type, int amount) {
+        if (type == null) {
+            throw new IllegalArgumentException("Resource type cannot be null");
+        }
+
+        int currentConsumption = consumption.getOrDefault(type, 0);
+        int newConsumption = currentConsumption + amount;
+        consumption.put(type, newConsumption);
+
+        LOGGER.fine(String.format("Added %d to %s consumption. New consumption: %d",
+                amount, type.getName(), newConsumption));
+
+        publishResourcesUpdated();
+
+        return newConsumption;
+    }
+
+    /**
+     * Removes from the production rate for a resource.
+     *
+     * @param type  The resource type
+     * @param amount The amount to remove from production
+     * @return The new production value (will not go below 0)
+     */
+    public int removeProduction(ResourceType type, int amount) {
+        if (type == null) {
+            throw new IllegalArgumentException("Resource type cannot be null");
+        }
+
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+
+        int currentProduction = production.getOrDefault(type, 0);
+        int newProduction = Math.max(0, currentProduction - amount);
+        production.put(type, newProduction);
+
+        LOGGER.fine(String.format("Removed %d from %s production. New production: %d",
+                amount, type.getName(), newProduction));
+
+        eventBus.publish(new ResourceEvents.ResourceChangedEvent(type, newProduction, currentProduction, true));
+
+        return newProduction;
+    }
+
+    /**
+     * Removes from the consumption rate for a resource.
+     *
+     * @param type  The resource type
+     * @param amount The amount to remove from consumption
+     * @return The new consumption value (will not go below 0)
+     */
+    public int removeConsumption(ResourceType type, int amount) {
+        if (type == null) {
+            throw new IllegalArgumentException("Resource type cannot be null");
+        }
+
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+
+        int currentConsumption = consumption.getOrDefault(type, 0);
+        int newConsumption = Math.max(0, currentConsumption - amount);
+        consumption.put(type, newConsumption);
+
+        LOGGER.fine(String.format("Removed %d from %s consumption. New consumption: %d",
+                amount, type.getName(), newConsumption));
+
+        publishResourcesUpdated();
+
+        return newConsumption;
+    }
+
+    /**
      * Assigns workers to a building.
      *
      * @param workersToAssign Number of workers to assign
@@ -370,40 +473,6 @@ public class ResourceManager implements Serializable {
     }
 
     /**
-     * Sets the population growth rate.
-     *
-     * @param rate The new growth rate
-     */
-    public void setPopulationGrowthRate(int rate) {
-        this.populationGrowthRate = rate;
-        LOGGER.info("Set population growth rate to " + rate);
-    }
-
-    /**
-     * Adjusts the population growth rate by the specified amount.
-     *
-     * @param adjustment The amount to adjust by
-     * @return The new growth rate
-     */
-    public int adjustPopulationGrowthRate(int adjustment) {
-        this.populationGrowthRate += adjustment;
-        if (this.populationGrowthRate < 0) {
-            this.populationGrowthRate = 0;
-        }
-        LOGGER.info("Adjusted population growth rate to " + populationGrowthRate);
-        return this.populationGrowthRate;
-    }
-
-    /**
-     * Gets the current population growth rate.
-     *
-     * @return The growth rate
-     */
-    public int getPopulationGrowthRate() {
-        return populationGrowthRate;
-    }
-
-    /**
      * Processes population growth for the turn.
      */
     private void processPopulationGrowth() {
@@ -419,6 +488,9 @@ public class ResourceManager implements Serializable {
 
         if (growthPotential > 0) {
             addResource(ResourceType.POPULATION, growthPotential);
+
+
+
             LOGGER.info("Population grew by " + growthPotential + ". New total: " + getResource(ResourceType.POPULATION));
         }
     }
@@ -436,8 +508,6 @@ public class ResourceManager implements Serializable {
         StringBuilder resourceReport = new StringBuilder("Resource changes:\n");
 
         for (ResourceType type : ResourceType.values()) {
-            if (type == ResourceType.POPULATION) continue;
-
             int net = getNetProduction(type);
 
             if (net > 0) {

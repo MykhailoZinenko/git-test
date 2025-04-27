@@ -7,10 +7,7 @@ import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceType;
 import com.colonygenesis.ui.ScreenManager;
-import com.colonygenesis.ui.events.BuildingEvents;
-import com.colonygenesis.ui.events.EventBus;
-import com.colonygenesis.ui.events.NotificationEvents;
-import com.colonygenesis.ui.events.TileEvents;
+import com.colonygenesis.ui.events.*;
 import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.LoggerUtil;
 import javafx.application.Platform;
@@ -140,6 +137,7 @@ public class TileInfoPanel extends GamePanel {
         eventBus.subscribe(BuildingEvents.BuildingDeactivatedEvent.class, this::handleBuildingDeactivated);
         eventBus.subscribe(BuildingEvents.WorkersAssignedEvent.class, this::handleWorkersAssigned);
         eventBus.subscribe(BuildingEvents.BuildingConstructionProgressEvent.class, this::handleConstructionProgress);
+        eventBus.subscribe(ColonyEvents.BuildingOccupancyChangedEvent.class, this::handleBuildingOccupancyChanged);
     }
 
     /**
@@ -210,6 +208,18 @@ public class TileInfoPanel extends GamePanel {
     private void handleConstructionProgress(BuildingEvents.BuildingConstructionProgressEvent event) {
         Platform.runLater(() -> {
             if (selectedTile != null && selectedTile.equals(event.getBuilding().getLocation())) {
+                updateBuildingInfo();
+            }
+        });
+    }
+
+    /**
+     * Handles the building occupancy changed event.
+     */
+    private void handleBuildingOccupancyChanged(ColonyEvents.BuildingOccupancyChangedEvent event) {
+        Platform.runLater(() -> {
+            if (selectedTile != null && selectedTile.hasBuilding() &&
+                    selectedTile.getBuilding() == event.getBuilding()) {
                 updateBuildingInfo();
             }
         });

@@ -1,5 +1,7 @@
 package com.colonygenesis.ui.events;
 
+import com.colonygenesis.building.HabitationBuilding;
+
 /**
  * Event classes related to colony management.
  */
@@ -180,6 +182,82 @@ public class ColonyEvents {
         @Override
         public String getName() {
             return "WorkerAvailabilityChanged";
+        }
+    }
+
+    /**
+     * Event fired when a habitation building's occupancy changes.
+     */
+    public static class BuildingOccupancyChangedEvent implements GameEvent {
+        private final HabitationBuilding building;
+        private final int newOccupancy;
+        private final int previousOccupancy;
+        private final int capacity;
+
+        /**
+         * Creates a new building occupancy changed event.
+         *
+         * @param building The habitation building
+         * @param newOccupancy The new occupancy
+         * @param previousOccupancy The previous occupancy
+         * @param capacity The building capacity
+         */
+        public BuildingOccupancyChangedEvent(HabitationBuilding building,
+                                             int newOccupancy, int previousOccupancy, int capacity) {
+            this.building = building;
+            this.newOccupancy = newOccupancy;
+            this.previousOccupancy = previousOccupancy;
+            this.capacity = capacity;
+        }
+
+        /**
+         * Gets the habitation building.
+         *
+         * @return The building
+         */
+        public HabitationBuilding getBuilding() {
+            return building;
+        }
+
+        /**
+         * Gets the new occupancy.
+         *
+         * @return The new occupancy
+         */
+        public int getNewOccupancy() {
+            return newOccupancy;
+        }
+
+        /**
+         * Gets the previous occupancy.
+         *
+         * @return The previous occupancy
+         */
+        public int getPreviousOccupancy() {
+            return previousOccupancy;
+        }
+
+        /**
+         * Gets the building capacity.
+         *
+         * @return The capacity
+         */
+        public int getCapacity() {
+            return capacity;
+        }
+
+        /**
+         * Gets the change in occupancy.
+         *
+         * @return The occupancy change
+         */
+        public int getDelta() {
+            return newOccupancy - previousOccupancy;
+        }
+
+        @Override
+        public String getName() {
+            return "BuildingOccupancyChanged";
         }
     }
 }

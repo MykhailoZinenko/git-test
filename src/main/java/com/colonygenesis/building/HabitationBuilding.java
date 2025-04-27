@@ -2,6 +2,8 @@ package com.colonygenesis.building;
 
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceType;
+import com.colonygenesis.ui.events.ColonyEvents;
+import com.colonygenesis.ui.events.EventBus;
 
 import java.io.Serial;
 import java.util.EnumMap;
@@ -104,5 +106,16 @@ public abstract class HabitationBuilding extends AbstractBuilding {
     public int getOccupancyPercentage() {
         if (capacity == 0) return 0;
         return (int)((float)occupied / capacity * 100);
+    }
+
+    public void setOccupied(int occupied) {
+        int previousOccupied = this.occupied;
+        this.occupied = Math.min(occupied, this.capacity); // Ensure we don't exceed capacity
+
+        // Publish the occupancy changed event
+        if (this.occupied != previousOccupied) {
+            EventBus.getInstance().publish(new ColonyEvents.BuildingOccupancyChangedEvent(
+                    this, this.occupied, previousOccupied, this.capacity));
+        }
     }
 }

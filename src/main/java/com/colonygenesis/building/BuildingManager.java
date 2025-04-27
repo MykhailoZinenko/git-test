@@ -60,13 +60,50 @@ public class BuildingManager implements Serializable {
 
         for (AbstractBuilding building : buildings) {
             if (building.isActive()) {
-                Map<ResourceType, Integer> buildingOutput = building.operate();
+                // Special handling for habitation buildings with population growth
+                if (building instanceof HabitationBuilding habitation && habitation.getPopulationGrowthRate() > 0) {
+                    // Check if this building can support more population
+                    int currentOccupied = habitation.getOccupied();
+                    int buildingCapacity = habitation.getCapacity();
+                    int growthRate = habitation.getPopulationGrowthRate();
 
+                    if (currentOccupied < buildingCapacity) {
+                        // Calculate how much this building can grow
+                        int spaceAvailable = buildingCapacity - currentOccupied;
+                        int actualGrowth = Math.min(growthRate, spaceAvailable);
+
+                        // Check against total population capacity
+                        int currentPopulation = game.getResourceManager().getResource(ResourceType.POPULATION);
+                        int totalCapacity = game.getResourceManager().getCapacity(ResourceType.POPULATION);
+                        int totalSpaceAvailable = totalCapacity - currentPopulation;
+
+                        actualGrowth = Math.min(actualGrowth, totalSpaceAvailable);
+
+                        if (actualGrowth > 0) {
+                            // Update the building's occupied count - this will publish the event
+                            habitation.setOccupied(currentOccupied + actualGrowth);
+
+                            // Add the actual growth to resource changes
+                            resourceChanges.merge(ResourceType.POPULATION, actualGrowth, Integer::sum);
+
+                            LOGGER.info(String.format("Population grew by %d in %s. New occupancy: %d/%d",
+                                    actualGrowth, building.getName(), habitation.getOccupied(), buildingCapacity));
+                        } else {
+                            LOGGER.info(String.format("No population growth in %s - at capacity", building.getName()));
+                        }
+                    }
+                }
+
+                // Handle other resources normally
+                Map<ResourceType, Integer> buildingOutput = building.operate();
                 for (Map.Entry<ResourceType, Integer> entry : buildingOutput.entrySet()) {
                     ResourceType type = entry.getKey();
                     int amount = entry.getValue();
 
-                    resourceChanges.merge(type, amount, Integer::sum);
+                    // Skip population resource as it's handled above
+                    if (type != ResourceType.POPULATION) {
+                        resourceChanges.merge(type, amount, Integer::sum);
+                    }
                 }
             }
         }
@@ -100,10 +137,6 @@ public class BuildingManager implements Serializable {
 
                 if (building instanceof HabitationBuilding habitation) {
                     game.getResourceManager().increaseCapacity(ResourceType.POPULATION, habitation.getCapacity());
-
-                    if (habitation.getPopulationGrowthRate() > 0) {
-                        game.getResourceManager().adjustPopulationGrowthRate(habitation.getPopulationGrowthRate());
-                    }
                 }
 
                 if (building.getWorkersRequired() == 0) {
@@ -118,18 +151,26 @@ public class BuildingManager implements Serializable {
 
     /**
      * Applies resource changes to the game's resource manager.
+     * Resets all production and consumption values before applying new values.
      *
      * @param resourceChanges Map of resource changes to apply
      */
     private void applyResourceChanges(Map<ResourceType, Integer> resourceChanges) {
+        // Reset all production and consumption values to 0
+        for (ResourceType type : ResourceType.values()) {
+            game.getResourceManager().setProduction(type, 0);
+            game.getResourceManager().setConsumption(type, 0);
+        }
+
+        // Apply the new production and consumption values
         for (Map.Entry<ResourceType, Integer> entry : resourceChanges.entrySet()) {
             ResourceType type = entry.getKey();
             int amount = entry.getValue();
 
             if (amount > 0) {
-                game.getResourceManager().addResource(type, amount);
+                game.getResourceManager().addProduction(type, amount);
             } else if (amount < 0) {
-                game.getResourceManager().removeResource(type, -amount);
+                game.getResourceManager().addConsumption(type, -amount);
             }
         }
     }
@@ -195,10 +236,6 @@ public class BuildingManager implements Serializable {
 
             if (building instanceof HabitationBuilding habitation) {
                 game.getResourceManager().increaseCapacity(ResourceType.POPULATION, habitation.getCapacity());
-
-                if (habitation.getPopulationGrowthRate() > 0) {
-                    game.getResourceManager().adjustPopulationGrowthRate(habitation.getPopulationGrowthRate());
-                }
             }
 
             LOGGER.info("Instantly constructed " + building.getName() + " at " + location);
@@ -225,13 +262,6 @@ public class BuildingManager implements Serializable {
 
         if (building.getWorkersAssigned() > 0) {
             building.removeWorkers(building.getWorkersAssigned());
-        }
-
-        if (building instanceof HabitationBuilding habitation) {
-
-            if (habitation.getPopulationGrowthRate() > 0) {
-                game.getResourceManager().adjustPopulationGrowthRate(-habitation.getPopulationGrowthRate());
-            }
         }
 
         buildings.remove(building);
