@@ -4,6 +4,10 @@ import com.colonygenesis.core.Game;
 import com.colonygenesis.technology.TechEffect;
 import com.colonygenesis.technology.TechEffectType;
 
+import com.colonygenesis.victory.VictoryType;
+import com.colonygenesis.util.LoggerUtil;
+import java.util.logging.Logger;
+
 import java.io.Serial;
 
 /**
@@ -12,6 +16,7 @@ import java.io.Serial;
 public class VictoryConditionEffect implements TechEffect {
     @Serial
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = LoggerUtil.getLogger(VictoryConditionEffect.class);
 
     private final String victoryType;
 
@@ -21,7 +26,18 @@ public class VictoryConditionEffect implements TechEffect {
 
     @Override
     public void apply(Game game) {
-        // Implement victory condition logic when victory system is implemented
+        // Unlock the victory condition
+        switch (victoryType.toLowerCase()) {
+            case "scientific victory":
+                game.getVictoryManager().unlockVictoryCondition(VictoryType.SCIENTIFIC);
+                break;
+            case "industrial victory":
+                game.getVictoryManager().unlockVictoryCondition(VictoryType.INDUSTRIAL);
+                break;
+            case "harmony victory":
+                game.getVictoryManager().unlockVictoryCondition(VictoryType.HARMONY);
+                break;
+        }
     }
 
     @Override

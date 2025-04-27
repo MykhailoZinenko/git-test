@@ -38,5 +38,10 @@ public enum GameState {
     /**
      * Game over screen.
      */
-    GAME_OVER
+    GAME_OVER,
+
+    /**
+     * Victory screen.
+     */
+    VICTORY,
 }

@@ -43,7 +43,7 @@ public class ResourceBar extends HBox {
         getChildren().add(populationDisplay);
 
         for (ResourceType type : ResourceType.values()) {
-            if (!type.isBasic() || type == ResourceType.POPULATION) continue;
+            if (type == ResourceType.POPULATION) continue;
 
             ResourceDisplay resourceDisplay = new ResourceDisplay(type);
             resourceDisplays.put(type, resourceDisplay);

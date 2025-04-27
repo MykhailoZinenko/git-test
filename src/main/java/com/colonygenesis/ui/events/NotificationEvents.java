@@ -270,12 +270,6 @@ public class NotificationEvents {
             return new GameNotificationEvent(title, message, NotificationType.ERROR);
         }
 
-        public static ResourceNotificationEvent resourceShortage(String resourceName, int amount) {
-            return new ResourceNotificationEvent(
-                    "Shortage of " + resourceName + " (needed " + amount + " more)",
-                    NotificationType.WARNING);
-        }
-
         public static BuildingNotificationEvent buildingCompleted(String buildingName) {
             return new BuildingNotificationEvent(
                     buildingName,

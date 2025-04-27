@@ -47,6 +47,16 @@ public class TurnManager implements Serializable {
      * Resets the phase to PLANNING.
      */
     public void advanceTurn() {
+        if (game.getVictoryManager().checkGameOver()) {
+            LOGGER.info("Game over!");
+            return;
+        }
+
+        game.getVictoryManager().updateProgress();
+        if (game.getVictoryManager().checkVictoryConditions()) {
+            LOGGER.info("Victory achieved!");
+        }
+
         int previousTurn = turnNumber;
         TurnPhase previousPhase = currentPhase;
 
@@ -122,6 +132,11 @@ public class TurnManager implements Serializable {
             case EVENTS:
                 // Execute events phase logic
                 LOGGER.info("Processing events");
+                game.getVictoryManager().updateProgress();
+                if (game.getVictoryManager().checkVictoryConditions()) {
+                    LOGGER.info("Victory condition met!");
+                }
+
                 break;
 
             case END_TURN:

@@ -9,6 +9,8 @@ import com.colonygenesis.ui.events.EventBus;
 import com.colonygenesis.ui.events.TurnEvents;
 import com.colonygenesis.util.DialogUtil;
 import com.colonygenesis.util.LoggerUtil;
+import com.colonygenesis.victory.VictoryManager;
+import com.colonygenesis.resource.AlienCompoundConverter;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -45,6 +47,9 @@ public class Game implements Serializable {
     private BuildingManager buildingManager;
     private TechManager techManager;
     private Planet planet;
+    private VictoryManager victoryManager;
+    private AlienCompoundConverter alienCompoundConverter;
+
 
     /**
      * Constructs a new game instance.
@@ -79,6 +84,8 @@ public class Game implements Serializable {
         this.buildingManager = new BuildingManager(this);
         this.planet = new Planet(this, colonyName + " Prime", planetType, mapSize);
         this.techManager = new TechManager(this);  // Add this line
+        this.victoryManager = new VictoryManager(this);
+        this.alienCompoundConverter = new AlienCompoundConverter(this);
 
         this.initialized = true;
 
@@ -140,21 +147,6 @@ public class Game implements Serializable {
     public void stop() {
         LOGGER.info("Game stopped: " + colonyName);
         this.running = false;
-    }
-
-    /**
-     * Advances the game to the next turn.
-     */
-    public void advanceTurn() {
-        LOGGER.info("Advancing from turn " + currentTurn + " to " + (currentTurn + 1));
-
-        resourceManager.processTurn();
-
-        buildingManager.processTurn();
-
-        currentTurn++;
-
-        LOGGER.info("Advanced to turn " + currentTurn);
     }
 
     /**
@@ -306,6 +298,18 @@ public class Game implements Serializable {
             techManager = new TechManager(this);
         }
 
+        if (victoryManager != null) {
+            // No setGame needed since Game is final in VictoryManager
+        } else {
+            LOGGER.severe("VictoryManager is null after loading");
+            victoryManager = new VictoryManager(this);
+        }
+
+        if (alienCompoundConverter == null) {
+            LOGGER.severe("AlienCompoundConverter is null after loading");
+            alienCompoundConverter = new AlienCompoundConverter(this);
+        }
+
         EventBus eventBus = EventBus.getInstance();
 
         resourceManager.publishCurrentState();
@@ -453,6 +457,24 @@ public class Game implements Serializable {
      */
     public TechManager getTechManager() {
         return techManager;
+    }
+
+    /**
+     * Gets the victory manager.
+     *
+     * @return The victory manager
+     */
+    public VictoryManager getVictoryManager() {
+        return victoryManager;
+    }
+
+    /**
+     * Gets the alien compound converter.
+     *
+     * @return The alien compound converter
+     */
+    public AlienCompoundConverter getAlienCompoundConverter() {
+        return alienCompoundConverter;
     }
 
     /**

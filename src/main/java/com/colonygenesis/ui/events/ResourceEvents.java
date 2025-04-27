@@ -195,48 +195,6 @@ public class ResourceEvents {
     }
 
     /**
-     * Event fired when a resource shortage occurs.
-     */
-    public static class ResourceShortageEvent implements GameEvent {
-        private final ResourceType resourceType;
-        private final int shortageAmount;
-
-        /**
-         * Creates a new resource shortage event.
-         *
-         * @param resourceType The type of resource with a shortage
-         * @param shortageAmount The amount of the shortage
-         */
-        public ResourceShortageEvent(ResourceType resourceType, int shortageAmount) {
-            this.resourceType = resourceType;
-            this.shortageAmount = shortageAmount;
-        }
-
-        /**
-         * Gets the resource type.
-         *
-         * @return The resource type
-         */
-        public ResourceType getResourceType() {
-            return resourceType;
-        }
-
-        /**
-         * Gets the shortage amount.
-         *
-         * @return The shortage amount
-         */
-        public int getShortageAmount() {
-            return shortageAmount;
-        }
-
-        @Override
-        public String getName() {
-            return "ResourceShortage";
-        }
-    }
-
-    /**
      * Event fired when worker availability changes.
      */
     public static class WorkerAvailabilityChangedEvent implements GameEvent {

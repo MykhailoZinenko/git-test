@@ -56,14 +56,12 @@ public class ResourceManager implements Serializable {
             lastTurnResources.put(type, 0);
         }
 
-        resources.put(ResourceType.FOOD, 50000);
-        resources.put(ResourceType.WATER, 50000);
-        resources.put(ResourceType.MATERIALS, 100000);
-        resources.put(ResourceType.ENERGY, 200000);
-        resources.put(ResourceType.POPULATION, 10000);
-        resources.put(ResourceType.ALIEN_COMPOUNDS, 10000);
-        resources.put(ResourceType.RARE_MINERALS, 100000);
-        resources.put(ResourceType.RESEARCH, 1000000);
+        resources.put(ResourceType.FOOD, 500);
+        resources.put(ResourceType.WATER, 500);
+        resources.put(ResourceType.MATERIALS, 500);
+        resources.put(ResourceType.ENERGY, 300);
+        resources.put(ResourceType.POPULATION, 10);
+        resources.put(ResourceType.ALIEN_COMPOUNDS, 2);
 
         LOGGER.info("ResourceManager initialized with starting resources");
 
@@ -253,6 +251,7 @@ public class ResourceManager implements Serializable {
             String error = String.format("Not enough %s: %d/%d needed",
                     type.getName(), current, amount);
             LOGGER.warning(error);
+            resources.put(type, 0);
             return Result.failure(error);
         }
 
@@ -527,9 +526,7 @@ public class ResourceManager implements Serializable {
                 Result<Integer> result = removeResource(type, needed);
 
                 if (result.isFailure()) {
-                    resourceReport.append(type.getName()).append(": SHORTAGE (needed ").append(needed).append(")\n");
-
-                    eventBus.publish(new ResourceEvents.ResourceShortageEvent(type, needed));
+                    LOGGER.fine("Game Over!");
                 } else {
                     resourceReport.append(type.getName()).append(": ").append(net).append("\n");
                 }

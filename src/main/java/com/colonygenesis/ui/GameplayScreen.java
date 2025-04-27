@@ -11,6 +11,7 @@ import com.colonygenesis.ui.styling.AppTheme;
 import com.colonygenesis.util.DialogUtil;
 import com.colonygenesis.util.LoggerUtil;
 import com.colonygenesis.util.Result;
+import com.colonygenesis.victory.VictoryEvents;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -46,6 +47,9 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private final EventBus eventBus = EventBus.getInstance();
 
     private Tile selectedTile;
+    private AlienCompoundPanel alienCompoundPanel;
+
+    private HBox baseContent = new HBox();
 
     /**
      * Constructs a new gameplay screen for the specified game.
@@ -74,8 +78,6 @@ public class GameplayScreen extends BorderPane implements IScreenController {
     private void initializeEventSubscriptions() {
         // Resource-related events
         eventBus.subscribe(ResourceEvents.ResourcesUpdatedEvent.class, this::handleResourcesUpdated);
-        eventBus.subscribe(ResourceEvents.ResourceShortageEvent.class, this::handleResourceShortage);
-
         // Turn-related events
         eventBus.subscribe(TurnEvents.TurnAdvancedEvent.class, this::handleTurnAdvanced);
         eventBus.subscribe(TurnEvents.PhaseChangedEvent.class, this::handlePhaseChanged);
@@ -95,6 +97,9 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         // Colony-related events
         eventBus.subscribe(ColonyEvents.PopulationChangedEvent.class, this::handlePopulationChanged);
         eventBus.subscribe(ColonyEvents.WorkerAvailabilityChangedEvent.class, this::handleWorkerAvailabilityChanged);
+
+        eventBus.subscribe(VictoryEvents.VictoryAchievedEvent.class, this::handleVictoryAchieved);
+        eventBus.subscribe(VictoryEvents.GameOverEvent.class, this::handleGameOver);
     }
 
     /**
@@ -102,23 +107,6 @@ public class GameplayScreen extends BorderPane implements IScreenController {
      */
     private void handleResourcesUpdated(ResourceEvents.ResourcesUpdatedEvent event) {
         Platform.runLater(() -> resourceBar.update(event.getResources(), event.getProduction(), event.getCapacity()));
-    }
-
-    /**
-     * Handles resource shortage notifications.
-     */
-    private void handleResourceShortage(ResourceEvents.ResourceShortageEvent event) {
-        Platform.runLater(() -> {
-            String message = "Shortage of " + event.getResourceType().getName() +
-                    " (needed " + event.getShortageAmount() + " more)";
-
-            eventBus.publish(NotificationEvents.Factory.resourceShortage(
-                    event.getResourceType().getName(),
-                    event.getShortageAmount()
-            ));
-
-            DialogUtil.showMessageDialog("Resource Shortage", message);
-        });
     }
 
     /**
@@ -287,29 +275,83 @@ public class GameplayScreen extends BorderPane implements IScreenController {
         });
     }
 
+    private void handleVictoryAchieved(VictoryEvents.VictoryAchievedEvent event) {
+        Platform.runLater(() -> {
+            // Create and show victory screen
+            VictoryScreen victoryScreen = new VictoryScreen();
+            victoryScreen.setVictoryType(event.getVictoryType());
+
+            ScreenManager.getInstance().registerScreen(GameState.VICTORY, victoryScreen);
+            ScreenManager.getInstance().activateScreen(GameState.VICTORY);
+        });
+    }
+
+    private void handleGameOver(VictoryEvents.GameOverEvent event) {
+        Platform.runLater(() -> {
+            // Create and show game over screen
+            GameOverScreen gameOverScreen = new GameOverScreen();
+            gameOverScreen.setGameOverDetails(event.getReason(), event.getDescription());
+
+            ScreenManager.getInstance().registerScreen(GameState.GAME_OVER, gameOverScreen);
+            ScreenManager.getInstance().activateScreen(GameState.GAME_OVER);
+        });
+    }
+
     /**
      * Initializes the UI components for the gameplay screen.
      */
     private void initializeUI() {
         LOGGER.fine("Initializing GameplayScreen UI");
 
+        // Header
         HBox headerBox = createHeader();
         headerBox.getStyleClass().add(AppTheme.STYLE_HEADER);
         setTop(headerBox);
 
+        // Create all components first
         mapView = new MapView();
         mapView.setGrid(game.getPlanet().getGrid());
         mapView.getStyleClass().add(AppTheme.STYLE_MAP_VIEW);
 
         tileInfoPanel = new TileInfoPanel(game);
         tileInfoPanel.setMaxWidth(300);
+        tileInfoPanel.setMinWidth(300);
 
-        HBox contentBox = new HBox();
-        HBox.setHgrow(mapView, Priority.ALWAYS);
-        contentBox.getChildren().addAll(mapView, tileInfoPanel);
+        alienCompoundPanel = new AlienCompoundPanel(game);
+        alienCompoundPanel.setMaxWidth(300);
+        alienCompoundPanel.setMinWidth(250);
 
-        setCenter(contentBox);
+        // Create debug overlay
+        debugOverlay = new DebugOverlay(game);
+        debugOverlay.setActive(false);
+        mapView.setDebugOverlay(debugOverlay);
 
+        // Create notification manager
+        notificationManager = new NotificationManager();
+
+        // Build the layout from inside out
+
+        // 1. Wrap mapView with debug overlay
+        StackPane mapStack = new StackPane();
+        mapStack.getChildren().addAll(mapView, debugOverlay);
+        StackPane.setAlignment(debugOverlay, Pos.TOP_RIGHT);
+        StackPane.setMargin(debugOverlay, new Insets(10));
+
+        // 2. Create main content with all panels
+        HBox contentBox = new HBox(10);
+        HBox.setHgrow(mapStack, Priority.ALWAYS);  // Let map grow, not the panels
+        contentBox.getChildren().addAll(alienCompoundPanel, mapStack, tileInfoPanel);
+
+        // 3. Wrap everything with notification manager
+        StackPane rootPane = new StackPane();
+        rootPane.getChildren().addAll(contentBox, notificationManager);
+        StackPane.setAlignment(notificationManager, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(notificationManager, new Insets(20));
+
+        // Set the final layout
+        setCenter(rootPane);
+
+        // Footer
         GameControlBar gameControlBar = new GameControlBar(() -> {
             Result<TurnPhase> result = game.getTurnManager().advancePhase();
             if (result.isFailure()) {
@@ -320,59 +362,30 @@ public class GameplayScreen extends BorderPane implements IScreenController {
             }
         }, () -> {
             ResearchOverlay overlay = new ResearchOverlay(game);
-            StackPane rootPane = ScreenManager.getInstance().getRootPane();
-            rootPane.getChildren().add(overlay);
+            StackPane screenRootPane = ScreenManager.getInstance().getRootPane();
+            screenRootPane.getChildren().add(overlay);
             overlay.show();
         });
 
         setBottom(gameControlBar);
 
+        // Setup keyboard shortcuts
+        setupKeyboardShortcuts();
+
         Platform.runLater(() -> mapView.resetView());
+
+        LOGGER.fine("GameplayScreen UI initialization complete");
     }
 
-    /**
-     * Sets up and configures the debug overlay.
-     */
+    // Remove or simplify these methods since we're handling everything in initializeUI
     private void setupDebugOverlay() {
-        debugOverlay = new DebugOverlay(game);
-
-        debugOverlay.setActive(false);
-
-        mapView.setDebugOverlay(debugOverlay);
-
-        StackPane.setAlignment(debugOverlay, Pos.TOP_RIGHT);
-        StackPane.setMargin(debugOverlay, new Insets(10));
-
-        StackPane mapStack = new StackPane();
-        mapStack.getChildren().add(mapView);
-        mapStack.getChildren().add(debugOverlay);
-
-        HBox contentBox = new HBox();
-        HBox.setHgrow(mapStack, Priority.ALWAYS);
-        contentBox.getChildren().addAll(mapStack, tileInfoPanel);
-
-        setCenter(contentBox);
-
-        LOGGER.fine("Debug overlay configured");
+        // This is now handled in initializeUI
+        LOGGER.fine("Debug overlay already configured in initializeUI");
     }
 
-    /**
-     * Sets up the notification manager.
-     */
     private void setupNotificationManager() {
-        notificationManager = new NotificationManager();
-
-        StackPane.setAlignment(notificationManager, Pos.BOTTOM_RIGHT);
-        StackPane.setMargin(notificationManager, new Insets(20));
-
-        Node centerNode = getCenter();
-
-        StackPane rootPane = new StackPane();
-        rootPane.getChildren().addAll(centerNode, notificationManager);
-
-        setCenter(rootPane);
-
-        LOGGER.fine("Notification manager configured");
+        // This is now handled in initializeUI
+        LOGGER.fine("Notification manager already configured in initializeUI");
     }
 
     /**
