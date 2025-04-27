@@ -122,6 +122,10 @@ public class BuildingManager implements Serializable {
 
         while (iterator.hasNext()) {
             AbstractBuilding building = iterator.next();
+
+            // Apply tech modifiers before checking construction
+            building.applyTechModifiers();
+
             int previousProgress = building.getConstructionProgress();
             boolean wasCompleted = building.progressConstruction();
             int newProgress = building.getConstructionProgress();
@@ -139,7 +143,10 @@ public class BuildingManager implements Serializable {
                     game.getResourceManager().increaseCapacity(ResourceType.POPULATION, habitation.getCapacity());
                 }
 
-                if (building.getWorkersRequired() == 0) {
+                // Apply tech effect for worker requirements
+                building.applyTechModifiers();
+
+                if (building.getWorkersRequired() == 0 || building.calculateEfficiency() > 0) {
                     building.activate();
                 }
 
@@ -196,7 +203,10 @@ public class BuildingManager implements Serializable {
             return Result.failure("Can only build on colonized tiles");
         }
 
+        building.applyTechModifiers();
+
         Map<ResourceType, Integer> constructionCost = building.getConstructionCost();
+
         for (Map.Entry<ResourceType, Integer> entry : constructionCost.entrySet()) {
             ResourceType type = entry.getKey();
             int amount = entry.getValue();
@@ -230,7 +240,8 @@ public class BuildingManager implements Serializable {
             LOGGER.info("Added " + building.getName() + " to construction queue");
             LOGGER.info("Construction time: " + building.getRemainingConstructionTime() + " turns");
         } else {
-            if (building.getWorkersRequired() == 0) {
+
+            if (building.getWorkersRequired() == 0 || building.calculateEfficiency() > 0) {
                 building.activate();
             }
 

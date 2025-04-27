@@ -56,11 +56,14 @@ public class ResourceManager implements Serializable {
             lastTurnResources.put(type, 0);
         }
 
-        resources.put(ResourceType.FOOD, 500);
-        resources.put(ResourceType.WATER, 500);
-        resources.put(ResourceType.MATERIALS, 1000);
-        resources.put(ResourceType.ENERGY, 200);
-        resources.put(ResourceType.POPULATION, 10);
+        resources.put(ResourceType.FOOD, 50000);
+        resources.put(ResourceType.WATER, 50000);
+        resources.put(ResourceType.MATERIALS, 100000);
+        resources.put(ResourceType.ENERGY, 200000);
+        resources.put(ResourceType.POPULATION, 10000);
+        resources.put(ResourceType.ALIEN_COMPOUNDS, 10000);
+        resources.put(ResourceType.RARE_MINERALS, 100000);
+        resources.put(ResourceType.RESEARCH, 1000000);
 
         LOGGER.info("ResourceManager initialized with starting resources");
 

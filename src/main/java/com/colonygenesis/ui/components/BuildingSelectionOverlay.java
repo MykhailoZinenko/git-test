@@ -23,6 +23,8 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -172,7 +174,8 @@ public class BuildingSelectionOverlay extends StackPane {
         content.setPadding(new Insets(15));
         content.getStyleClass().add(AppTheme.STYLE_PANEL_CONTENT);
 
-        Label resourceProducersLabel = new Label("Resource Producers");
+        // Basic Resource Producers
+        Label resourceProducersLabel = new Label("Basic Resource Producers");
         resourceProducersLabel.getStyleClass().add("building-category-header");
         resourceProducersLabel.setMaxWidth(Double.MAX_VALUE);
 
@@ -183,12 +186,14 @@ public class BuildingSelectionOverlay extends StackPane {
             BuildingOptionButton button = new BuildingOptionButton(
                     type.getName(),
                     "Produces " + type.getOutputType().getName(),
-                    () -> new ResourceProducer(type, tile)
+                    () -> new ResourceProducer(type, tile, game),
+                    true  // Basic buildings are always unlocked
             );
 
             resourceProducersBox.getChildren().add(button);
         }
 
+        // Advanced Producers
         Label advancedProducersLabel = new Label("Advanced Producers");
         advancedProducersLabel.getStyleClass().add("building-category-header");
         advancedProducersLabel.setMaxWidth(Double.MAX_VALUE);
@@ -200,10 +205,35 @@ public class BuildingSelectionOverlay extends StackPane {
             BuildingOptionButton button = new BuildingOptionButton(
                     type.getName(),
                     "Produces " + type.getOutputType().getName(),
-                    () -> new AdvancedProducer(type, tile)
+                    () -> new AdvancedProducer(type, tile, game),
+                    true  // Basic advanced buildings are always unlocked
             );
 
             advancedProducersBox.getChildren().add(button);
+        }
+
+        // Tech-Unlocked Producers
+        Label unlockedProducersLabel = new Label("Research-Unlocked Buildings");
+        unlockedProducersLabel.getStyleClass().add("building-category-header");
+        unlockedProducersLabel.setMaxWidth(Double.MAX_VALUE);
+
+        VBox unlockedProducersBox = new VBox(10);
+        unlockedProducersBox.setPadding(new Insets(5));
+
+        for (UnlockedProducers.UnlockedProducerType type : UnlockedProducers.UnlockedProducerType.values()) {
+            boolean isUnlocked = game.getTechManager().isBuildingUnlocked(type.getUnlockId());
+            BuildingOptionButton button = new BuildingOptionButton(
+                    type.getName(),
+                    "Produces " + type.getOutputType().getName(),
+                    () -> new UnlockedProducers(type, tile, game),
+                    isUnlocked
+            );
+
+            if (!isUnlocked) {
+                button.setDisabled("Requires research");
+            }
+
+            unlockedProducersBox.getChildren().add(button);
         }
 
         content.getChildren().addAll(
@@ -211,7 +241,10 @@ public class BuildingSelectionOverlay extends StackPane {
                 resourceProducersBox,
                 new Separator(),
                 advancedProducersLabel,
-                advancedProducersBox
+                advancedProducersBox,
+                new Separator(),
+                unlockedProducersLabel,
+                unlockedProducersBox
         );
 
         ScrollPane scrollPane = new ScrollPane(content);
@@ -231,6 +264,7 @@ public class BuildingSelectionOverlay extends StackPane {
         content.setPadding(new Insets(15));
         content.getStyleClass().add(AppTheme.STYLE_PANEL_CONTENT);
 
+        // Basic Housing
         Label basicHousingLabel = new Label("Basic Housing");
         basicHousingLabel.getStyleClass().add("building-category-header");
         basicHousingLabel.setMaxWidth(Double.MAX_VALUE);
@@ -242,12 +276,14 @@ public class BuildingSelectionOverlay extends StackPane {
             BuildingOptionButton button = new BuildingOptionButton(
                     type.getName(),
                     "Capacity: " + type.getCapacity() + " colonists",
-                    () -> new BasicHousing(type, tile)
+                    () -> new BasicHousing(type, tile, game),
+                    true  // Basic housing is always unlocked
             );
 
             basicHousingBox.getChildren().add(button);
         }
 
+        // Advanced Housing
         Label advancedHousingLabel = new Label("Advanced Housing");
         advancedHousingLabel.getStyleClass().add("building-category-header");
         advancedHousingLabel.setMaxWidth(Double.MAX_VALUE);
@@ -259,10 +295,35 @@ public class BuildingSelectionOverlay extends StackPane {
             BuildingOptionButton button = new BuildingOptionButton(
                     type.getName(),
                     "Capacity: " + type.getCapacity() + " colonists",
-                    () -> new AdvancedHousing(type, tile)
+                    () -> new AdvancedHousing(type, tile, game),
+                    true  // Advanced housing is always unlocked
             );
 
             advancedHousingBox.getChildren().add(button);
+        }
+
+        // Tech-Unlocked Housing
+        Label unlockedHousingLabel = new Label("Research-Unlocked Housing");
+        unlockedHousingLabel.getStyleClass().add("building-category-header");
+        unlockedHousingLabel.setMaxWidth(Double.MAX_VALUE);
+
+        VBox unlockedHousingBox = new VBox(10);
+        unlockedHousingBox.setPadding(new Insets(5));
+
+        for (UnlockedHousing.UnlockedHousingType type : UnlockedHousing.UnlockedHousingType.values()) {
+            boolean isUnlocked = game.getTechManager().isBuildingUnlocked(type.getUnlockId());
+            BuildingOptionButton button = new BuildingOptionButton(
+                    type.getName(),
+                    "Capacity: " + type.getCapacity() + " colonists",
+                    () -> new UnlockedHousing(type, tile, game),
+                    isUnlocked
+            );
+
+            if (!isUnlocked) {
+                button.setDisabled("Requires research");
+            }
+
+            unlockedHousingBox.getChildren().add(button);
         }
 
         content.getChildren().addAll(
@@ -270,7 +331,10 @@ public class BuildingSelectionOverlay extends StackPane {
                 basicHousingBox,
                 new Separator(),
                 advancedHousingLabel,
-                advancedHousingBox
+                advancedHousingBox,
+                new Separator(),
+                unlockedHousingLabel,
+                unlockedHousingBox
         );
 
         ScrollPane scrollPane = new ScrollPane(content);
@@ -293,6 +357,9 @@ public class BuildingSelectionOverlay extends StackPane {
             detailsBox.getChildren().add(noSelectionLabel);
             return;
         }
+
+        // Apply tech modifiers before displaying
+        selectedBuilding.applyTechModifiers();
 
         Label nameLabel = new Label(selectedBuilding.getName());
         nameLabel.getStyleClass().add("building-name");
@@ -462,8 +529,11 @@ public class BuildingSelectionOverlay extends StackPane {
      */
     private class BuildingOptionButton extends HBox {
         private final AbstractBuilding building;
+        private final boolean unlocked;
 
-        public BuildingOptionButton(String name, String description, BuildingSupplier supplier) {
+        public BuildingOptionButton(String name, String description, BuildingSupplier supplier, boolean unlocked) {
+            this.unlocked = unlocked;
+
             setSpacing(10);
             setPadding(new Insets(10));
             setMinHeight(50);
@@ -477,9 +547,15 @@ public class BuildingSelectionOverlay extends StackPane {
 
             Label nameLabel = new Label(name);
             nameLabel.getStyleClass().add(AppTheme.STYLE_SUBTITLE);
+            if (!unlocked) {
+                nameLabel.setTextFill(Color.GRAY);
+            }
 
             Label descLabel = new Label(description);
             descLabel.getStyleClass().add(AppTheme.STYLE_DESCRIPTION);
+            if (!unlocked) {
+                descLabel.setTextFill(Color.GRAY);
+            }
 
             textContent.getChildren().addAll(nameLabel, descLabel);
 
@@ -494,34 +570,69 @@ public class BuildingSelectionOverlay extends StackPane {
                         pb.getPrimaryOutputType().getName() + "/turn");
                 outputLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
                 outputLabel.setStyle("-fx-font-size: 11px;");
+                if (!unlocked) {
+                    outputLabel.setTextFill(Color.GRAY);
+                }
                 infoBox.getChildren().add(outputLabel);
             }
             else if (building instanceof HabitationBuilding hb) {
                 Label capacityLabel = new Label("Capacity: " + hb.getCapacity());
                 capacityLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
                 capacityLabel.setStyle("-fx-font-size: 11px;");
+                if (!unlocked) {
+                    capacityLabel.setTextFill(Color.GRAY);
+                }
                 infoBox.getChildren().add(capacityLabel);
             }
 
             Label timeLabel = new Label(building.getConstructionTime() + " turns");
             timeLabel.getStyleClass().add(AppTheme.STYLE_LABEL);
             timeLabel.setStyle("-fx-font-size: 11px;");
+            if (!unlocked) {
+                timeLabel.setTextFill(Color.GRAY);
+            }
             infoBox.getChildren().add(timeLabel);
+
+            if (!unlocked) {
+                Label lockedLabel = new Label("LOCKED");
+                lockedLabel.setTextFill(Color.RED);
+                lockedLabel.setStyle("-fx-font-weight: bold;");
+                infoBox.getChildren().add(lockedLabel);
+            }
 
             getChildren().addAll(textContent, infoBox);
 
-            setOnMouseClicked(e -> {
-                eventBus.publish(new BuildingSelectedEvent(building));
+            if (unlocked) {
+                setOnMouseClicked(e -> {
+                    eventBus.publish(new BuildingSelectedEvent(building));
 
-                getParent().getChildrenUnmodifiable().forEach(node -> {
-                    if (node instanceof BuildingOptionButton) {
-                        node.getStyleClass().remove("selected-building");
-                        node.setStyle("-fx-background-color: " + AppTheme.toRgbString(AppTheme.COLOR_BACKGROUND_MEDIUM) + ";");
-                    }
+                    getParent().getChildrenUnmodifiable().forEach(node -> {
+                        if (node instanceof BuildingOptionButton) {
+                            node.getStyleClass().remove("selected-building");
+                            node.setStyle("-fx-background-color: " + AppTheme.toRgbString(AppTheme.COLOR_BACKGROUND_MEDIUM) + ";");
+                        }
+                    });
+                    getStyleClass().add("selected-building");
+                    setStyle("-fx-background-color: " + AppTheme.toRgbString(AppTheme.COLOR_ACCENT_PRIMARY) + ";");
                 });
-                getStyleClass().add("selected-building");
-                setStyle("-fx-background-color: " + AppTheme.toRgbString(AppTheme.COLOR_ACCENT_PRIMARY) + ";");
-            });
+            } else {
+                setOnMouseClicked(e -> {
+                    // Show a message that the building is locked
+                    eventBus.publish(new BuildingSelectedEvent(null));
+                });
+                setStyle("-fx-background-color: " + AppTheme.toRgbString(AppTheme.COLOR_BACKGROUND_DARK) + ";");
+            }
+        }
+
+        public void setDisabled(String reason) {
+            if (!unlocked) {
+                Label reasonLabel = new Label(reason);
+                reasonLabel.setTextFill(Color.ORANGE);
+                reasonLabel.setStyle("-fx-font-size: 10px;");
+
+                VBox infoBox = (VBox) getChildren().get(1);
+                infoBox.getChildren().add(0, reasonLabel);
+            }
         }
     }
 

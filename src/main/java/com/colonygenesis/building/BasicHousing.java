@@ -1,5 +1,6 @@
 package com.colonygenesis.building;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceType;
 
@@ -22,7 +23,7 @@ public class BasicHousing extends HabitationBuilding {
      * @param housingType The type of housing
      * @param location The tile where the building is located
      */
-    public BasicHousing(HousingType housingType, Tile location) {
+    public BasicHousing(HousingType housingType, Tile location, Game game) {
         super(
                 housingType.getName(),
                 housingType.getDescription(),
@@ -31,7 +32,8 @@ public class BasicHousing extends HabitationBuilding {
                 housingType.getWorkersRequired(),
                 housingType.getCapacity(),
                 housingType.getComfortLevel(),
-                housingType.getGrowthRate()
+                housingType.getGrowthRate(),
+                game
         );
 
         this.housingType = housingType;
@@ -52,6 +54,11 @@ public class BasicHousing extends HabitationBuilding {
     }
 
     @Override
+    protected int calculateProduction() {
+        return 0;
+    }
+
+    @Override
     protected void calculateResourceConsumption(Map<ResourceType, Integer> output) {
         if (!isActive() || occupied == 0) {
             return;
@@ -65,6 +72,21 @@ public class BasicHousing extends HabitationBuilding {
         output.put(ResourceType.FOOD, -foodConsumption);
         output.put(ResourceType.WATER, -waterConsumption);
         output.put(ResourceType.ENERGY, -energyConsumption);
+    }
+
+    @Override
+    protected int calculateBaseResourceConsumption(ResourceType type) {
+        switch (type) {
+            case FOOD:
+                return (int) Math.ceil(occupied * housingType.getFoodPerColonist());
+            case WATER:
+                return (int) Math.ceil(occupied * housingType.getWaterPerColonist());
+            case ENERGY:
+                return housingType.getBaseEnergyCost() +
+                        (int) Math.ceil(occupied * housingType.getEnergyPerColonist());
+            default:
+                return 0;
+        }
     }
 
     /**

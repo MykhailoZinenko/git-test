@@ -1,9 +1,11 @@
 package com.colonygenesis.technology;
 
+import com.colonygenesis.building.BuildingType;
 import com.colonygenesis.resource.ResourceType;
+import com.colonygenesis.technology.effects.*;
 
 /**
- * Initializes the research tree with all technologies.
+ * Initializes the research tree with all technologies and their effects.
  */
 public class ResearchTreeInitializer {
 
@@ -13,12 +15,14 @@ public class ResearchTreeInitializer {
                 "Unlocks Basic Hydroponics Farm", TechBranch.SURVIVAL, 1, 100, 100);
         hydroponics.addResourceCost(ResourceType.RESEARCH, 100);
         hydroponics.addResourceCost(ResourceType.MATERIALS, 50);
+        hydroponics.addEffect(new BuildingUnlockEffect("hydroponics_farm", "Basic Hydroponics Farm", BuildingType.PRODUCTION));
         tree.addTechnology(hydroponics);
 
         Technology waterRecycling = new Technology("water_recycling", "Water Recycling",
                 "-20% water consumption for all buildings", TechBranch.SURVIVAL, 1, 100, 220);
         waterRecycling.addResourceCost(ResourceType.RESEARCH, 150);
         waterRecycling.addResourceCost(ResourceType.MATERIALS, 75);
+        waterRecycling.addEffect(new ConsumptionModifierEffect(ResourceType.WATER, 0.8, null));
         tree.addTechnology(waterRecycling);
 
         Technology basicMedicine = new Technology("basic_medicine", "Basic Medicine",
@@ -26,6 +30,7 @@ public class ResearchTreeInitializer {
         basicMedicine.addResourceCost(ResourceType.RESEARCH, 120);
         basicMedicine.addResourceCost(ResourceType.MATERIALS, 40);
         basicMedicine.addResourceCost(ResourceType.ENERGY, 20);
+        basicMedicine.addEffect(new PopulationGrowthModifierEffect(1.1));
         tree.addTechnology(basicMedicine);
 
         // Survival Branch - Tier 2
@@ -35,6 +40,7 @@ public class ResearchTreeInitializer {
         advancedHydroponics.addResourceCost(ResourceType.MATERIALS, 100);
         advancedHydroponics.addResourceCost(ResourceType.ENERGY, 50);
         advancedHydroponics.addPrerequisite("hydroponics");
+        advancedHydroponics.addEffect(new ProductionModifierEffect(ResourceType.FOOD, 1.3, BuildingType.PRODUCTION));
         tree.addTechnology(advancedHydroponics);
 
         Technology atmosphericProcessing = new Technology("atmospheric_processing", "Atmospheric Processing",
@@ -43,14 +49,16 @@ public class ResearchTreeInitializer {
         atmosphericProcessing.addResourceCost(ResourceType.MATERIALS, 150);
         atmosphericProcessing.addResourceCost(ResourceType.ENERGY, 75);
         atmosphericProcessing.addPrerequisite("water_recycling");
+        atmosphericProcessing.addEffect(new BuildingUnlockEffect("atmosphere_processor", "Atmosphere Processor", BuildingType.PRODUCTION));
         tree.addTechnology(atmosphericProcessing);
 
         Technology colonyHealth = new Technology("colony_health", "Colony Health Systems",
-                "+20% population growth, +1 max workers per habitation", TechBranch.SURVIVAL, 2, 300, 340);
+                "+20% population growth", TechBranch.SURVIVAL, 2, 300, 340);
         colonyHealth.addResourceCost(ResourceType.RESEARCH, 300);
         colonyHealth.addResourceCost(ResourceType.MATERIALS, 100);
         colonyHealth.addResourceCost(ResourceType.ENERGY, 50);
         colonyHealth.addPrerequisite("basic_medicine");
+        colonyHealth.addEffect(new PopulationGrowthModifierEffect(1.2));
         tree.addTechnology(colonyHealth);
 
         // Survival Branch - Tier 3
@@ -60,6 +68,7 @@ public class ResearchTreeInitializer {
         verticalFarming.addResourceCost(ResourceType.MATERIALS, 200);
         verticalFarming.addResourceCost(ResourceType.ENERGY, 100);
         verticalFarming.addPrerequisite("advanced_hydroponics");
+        verticalFarming.addEffect(new BuildingUnlockEffect("vertical_farm", "Vertical Farm", BuildingType.PRODUCTION));
         tree.addTechnology(verticalFarming);
 
         Technology lifeSupport = new Technology("life_support", "Life Support Optimization",
@@ -69,24 +78,30 @@ public class ResearchTreeInitializer {
         lifeSupport.addResourceCost(ResourceType.ENERGY, 150);
         lifeSupport.addPrerequisite("atmospheric_processing");
         lifeSupport.addPrerequisite("colony_health");
+        lifeSupport.addEffect(new ConsumptionModifierEffect(ResourceType.WATER, 0.7, BuildingType.HABITATION));
+        lifeSupport.addEffect(new ConsumptionModifierEffect(ResourceType.ENERGY, 0.7, BuildingType.HABITATION));
+        lifeSupport.addEffect(new ConsumptionModifierEffect(ResourceType.FOOD, 0.7, BuildingType.HABITATION));
         tree.addTechnology(lifeSupport);
 
         // Survival Branch - Tier 4
-        Technology terraforming = new Technology("terraforming", "Terraforming Basics",
-                "Unlocks Terraforming Station, allows converting harsh terrain", TechBranch.SURVIVAL, 4, 700, 190);
-        terraforming.addResourceCost(ResourceType.RESEARCH, 2000);
-        terraforming.addResourceCost(ResourceType.MATERIALS, 500);
-        terraforming.addResourceCost(ResourceType.ENERGY, 300);
-        terraforming.addResourceCost(ResourceType.RARE_MINERALS, 100);
-        terraforming.addPrerequisite("life_support");
-        terraforming.addPrerequisite("vertical_farming");
-        tree.addTechnology(terraforming);
+        Technology advancedLifeSupport = new Technology("advanced_life_support", "Advanced Life Support",
+                "Greatly reduces resource consumption", TechBranch.SURVIVAL, 4, 700, 190);
+        advancedLifeSupport.addResourceCost(ResourceType.RESEARCH, 2000);
+        advancedLifeSupport.addResourceCost(ResourceType.MATERIALS, 500);
+        advancedLifeSupport.addResourceCost(ResourceType.ENERGY, 300);
+        advancedLifeSupport.addResourceCost(ResourceType.RARE_MINERALS, 100);
+        advancedLifeSupport.addPrerequisite("life_support");
+        advancedLifeSupport.addPrerequisite("vertical_farming");
+        advancedLifeSupport.addEffect(new ConsumptionModifierEffect(ResourceType.WATER, 0.5, null));
+        advancedLifeSupport.addEffect(new ConsumptionModifierEffect(ResourceType.ENERGY, 0.5, null));
+        tree.addTechnology(advancedLifeSupport);
 
         // Industry Branch - Tier 1
         Technology improvedMining = new Technology("improved_mining", "Improved Mining",
                 "+25% materials production from mines", TechBranch.INDUSTRY, 1, 100, 460);
         improvedMining.addResourceCost(ResourceType.RESEARCH, 120);
         improvedMining.addResourceCost(ResourceType.MATERIALS, 60);
+        improvedMining.addEffect(new ProductionModifierEffect(ResourceType.MATERIALS, 1.25, BuildingType.PRODUCTION));
         tree.addTechnology(improvedMining);
 
         Technology basicAutomation = new Technology("basic_automation", "Basic Automation",
@@ -94,12 +109,14 @@ public class ResearchTreeInitializer {
         basicAutomation.addResourceCost(ResourceType.RESEARCH, 150);
         basicAutomation.addResourceCost(ResourceType.MATERIALS, 80);
         basicAutomation.addResourceCost(ResourceType.ENERGY, 40);
+        basicAutomation.addEffect(new WorkerModifierEffect(1, BuildingType.PRODUCTION));
         tree.addTechnology(basicAutomation);
 
         Technology energyGrid = new Technology("energy_grid", "Energy Grid",
                 "+20% energy production from all sources", TechBranch.INDUSTRY, 1, 100, 700);
         energyGrid.addResourceCost(ResourceType.RESEARCH, 180);
         energyGrid.addResourceCost(ResourceType.MATERIALS, 100);
+        energyGrid.addEffect(new ProductionModifierEffect(ResourceType.ENERGY, 1.2, null));
         tree.addTechnology(energyGrid);
 
         // Industry Branch - Tier 2
@@ -109,6 +126,7 @@ public class ResearchTreeInitializer {
         deepCoreMining.addResourceCost(ResourceType.MATERIALS, 200);
         deepCoreMining.addResourceCost(ResourceType.ENERGY, 100);
         deepCoreMining.addPrerequisite("improved_mining");
+        deepCoreMining.addEffect(new BuildingUnlockEffect("deep_mine", "Deep Mine", BuildingType.PRODUCTION));
         tree.addTechnology(deepCoreMining);
 
         Technology industrialRobotics = new Technology("industrial_robotics", "Industrial Robotics",
@@ -117,6 +135,7 @@ public class ResearchTreeInitializer {
         industrialRobotics.addResourceCost(ResourceType.MATERIALS, 250);
         industrialRobotics.addResourceCost(ResourceType.ENERGY, 150);
         industrialRobotics.addPrerequisite("basic_automation");
+        industrialRobotics.addEffect(new WorkerModifierEffect(2, BuildingType.PRODUCTION));
         tree.addTechnology(industrialRobotics);
 
         Technology fusionPower = new Technology("fusion_power", "Fusion Power",
@@ -126,6 +145,7 @@ public class ResearchTreeInitializer {
         fusionPower.addResourceCost(ResourceType.ENERGY, 100);
         fusionPower.addResourceCost(ResourceType.RARE_MINERALS, 50);
         fusionPower.addPrerequisite("energy_grid");
+        fusionPower.addEffect(new BuildingUnlockEffect("fusion_reactor", "Fusion Reactor", BuildingType.PRODUCTION));
         tree.addTechnology(fusionPower);
 
         // Industry Branch - Tier 3
@@ -136,6 +156,9 @@ public class ResearchTreeInitializer {
         resourceRefinement.addResourceCost(ResourceType.ENERGY, 200);
         resourceRefinement.addPrerequisite("deep_core_mining");
         resourceRefinement.addPrerequisite("industrial_robotics");
+        resourceRefinement.addEffect(new ProductionModifierEffect(ResourceType.MATERIALS, 1.5, null));
+        resourceRefinement.addEffect(new ProductionModifierEffect(ResourceType.ENERGY, 1.5, null));
+        resourceRefinement.addEffect(new ProductionModifierEffect(ResourceType.FOOD, 1.5, null));
         tree.addTechnology(resourceRefinement);
 
         Technology orbitalManufacturing = new Technology("orbital_manufacturing", "Orbital Manufacturing",
@@ -146,6 +169,7 @@ public class ResearchTreeInitializer {
         orbitalManufacturing.addResourceCost(ResourceType.RARE_MINERALS, 100);
         orbitalManufacturing.addPrerequisite("industrial_robotics");
         orbitalManufacturing.addPrerequisite("fusion_power");
+        orbitalManufacturing.addEffect(new BuildingUnlockEffect("orbital_platform", "Orbital Platform", BuildingType.SPECIAL));
         tree.addTechnology(orbitalManufacturing);
 
         // Industry Branch - Tier 4
@@ -157,6 +181,7 @@ public class ResearchTreeInitializer {
         megastructure.addResourceCost(ResourceType.RARE_MINERALS, 200);
         megastructure.addPrerequisite("resource_refinement");
         megastructure.addPrerequisite("orbital_manufacturing");
+        megastructure.addEffect(new VictoryConditionEffect("Industrial Victory"));
         tree.addTechnology(megastructure);
 
         // Science Branch - Tier 1
@@ -164,20 +189,23 @@ public class ResearchTreeInitializer {
                 "+20% research production", TechBranch.SCIENCE, 1, 100, 820);
         researchMethodology.addResourceCost(ResourceType.RESEARCH, 100);
         researchMethodology.addResourceCost(ResourceType.MATERIALS, 30);
+        researchMethodology.addEffect(new ProductionModifierEffect(ResourceType.RESEARCH, 1.2, null));
         tree.addTechnology(researchMethodology);
 
         Technology materialsScience = new Technology("materials_science", "Materials Science",
                 "-15% construction costs for all buildings", TechBranch.SCIENCE, 1, 100, 940);
         materialsScience.addResourceCost(ResourceType.RESEARCH, 140);
         materialsScience.addResourceCost(ResourceType.MATERIALS, 70);
+        materialsScience.addEffect(new ConstructionCostModifierEffect(0.85, null));
         tree.addTechnology(materialsScience);
 
-        Technology sensorArrays = new Technology("sensor_arrays", "Sensor Arrays",
-                "Reveals resources in adjacent tiles", TechBranch.SCIENCE, 1, 100, 1060);
-        sensorArrays.addResourceCost(ResourceType.RESEARCH, 160);
-        sensorArrays.addResourceCost(ResourceType.MATERIALS, 80);
-        sensorArrays.addResourceCost(ResourceType.ENERGY, 40);
-        tree.addTechnology(sensorArrays);
+        Technology advancedSensors = new Technology("advanced_sensors", "Advanced Sensors",
+                "+20% production for all research buildings", TechBranch.SCIENCE, 1, 100, 1060);
+        advancedSensors.addResourceCost(ResourceType.RESEARCH, 160);
+        advancedSensors.addResourceCost(ResourceType.MATERIALS, 80);
+        advancedSensors.addResourceCost(ResourceType.ENERGY, 40);
+        advancedSensors.addEffect(new ProductionModifierEffect(ResourceType.RESEARCH, 1.2, BuildingType.RESEARCH));
+        tree.addTechnology(advancedSensors);
 
         // Science Branch - Tier 2
         Technology advancedComputing = new Technology("advanced_computing", "Advanced Computing",
@@ -186,6 +214,7 @@ public class ResearchTreeInitializer {
         advancedComputing.addResourceCost(ResourceType.MATERIALS, 200);
         advancedComputing.addResourceCost(ResourceType.ENERGY, 100);
         advancedComputing.addPrerequisite("research_methodology");
+        advancedComputing.addEffect(new BuildingUnlockEffect("quantum_lab", "Quantum Lab", BuildingType.RESEARCH));
         tree.addTechnology(advancedComputing);
 
         Technology nanotechConstruction = new Technology("nanotech_construction", "Nanotech Construction",
@@ -194,15 +223,17 @@ public class ResearchTreeInitializer {
         nanotechConstruction.addResourceCost(ResourceType.MATERIALS, 250);
         nanotechConstruction.addResourceCost(ResourceType.RARE_MINERALS, 50);
         nanotechConstruction.addPrerequisite("materials_science");
+        nanotechConstruction.addEffect(new ConstructionTimeModifierEffect(0.75, null));
         tree.addTechnology(nanotechConstruction);
 
-        Technology deepSpaceScanning = new Technology("deep_space_scanning", "Deep Space Scanning",
-                "Reveals entire map, detects rare resources", TechBranch.SCIENCE, 2, 300, 1060);
-        deepSpaceScanning.addResourceCost(ResourceType.RESEARCH, 350);
-        deepSpaceScanning.addResourceCost(ResourceType.MATERIALS, 150);
-        deepSpaceScanning.addResourceCost(ResourceType.ENERGY, 100);
-        deepSpaceScanning.addPrerequisite("sensor_arrays");
-        tree.addTechnology(deepSpaceScanning);
+        Technology advancedResearch = new Technology("advanced_research", "Advanced Research",
+                "+30% research production from all sources", TechBranch.SCIENCE, 2, 300, 1060);
+        advancedResearch.addResourceCost(ResourceType.RESEARCH, 350);
+        advancedResearch.addResourceCost(ResourceType.MATERIALS, 150);
+        advancedResearch.addResourceCost(ResourceType.ENERGY, 100);
+        advancedResearch.addPrerequisite("advanced_sensors");
+        advancedResearch.addEffect(new ProductionModifierEffect(ResourceType.RESEARCH, 1.3, null));
+        tree.addTechnology(advancedResearch);
 
         // Science Branch - Tier 3
         Technology artificialIntelligence = new Technology("artificial_intelligence", "Artificial Intelligence",
@@ -212,6 +243,7 @@ public class ResearchTreeInitializer {
         artificialIntelligence.addResourceCost(ResourceType.ENERGY, 200);
         artificialIntelligence.addResourceCost(ResourceType.RARE_MINERALS, 100);
         artificialIntelligence.addPrerequisite("advanced_computing");
+        artificialIntelligence.addEffect(new EfficiencyModifierEffect(0.5));
         tree.addTechnology(artificialIntelligence);
 
         Technology alienXenobiology = new Technology("alien_xenobiology", "Alien Xenobiology",
@@ -220,7 +252,8 @@ public class ResearchTreeInitializer {
         alienXenobiology.addResourceCost(ResourceType.MATERIALS, 400);
         alienXenobiology.addResourceCost(ResourceType.ENERGY, 200);
         alienXenobiology.addPrerequisite("advanced_computing");
-        alienXenobiology.addPrerequisite("deep_space_scanning");
+        alienXenobiology.addPrerequisite("advanced_research");
+        alienXenobiology.addEffect(new BuildingUnlockEffect("xenobiology_lab", "Xenobiology Lab", BuildingType.PRODUCTION));
         tree.addTechnology(alienXenobiology);
 
         // Science Branch - Tier 4
@@ -232,82 +265,97 @@ public class ResearchTreeInitializer {
         techSingularity.addResourceCost(ResourceType.RARE_MINERALS, 300);
         techSingularity.addPrerequisite("artificial_intelligence");
         techSingularity.addPrerequisite("alien_xenobiology");
+        techSingularity.addEffect(new ProductionModifierEffect(ResourceType.RESEARCH, 2.0, null));
+        techSingularity.addEffect(new VictoryConditionEffect("Scientific Victory"));
         tree.addTechnology(techSingularity);
 
         // Adaptation Branch - Tier 1
-        Technology environmentalSuits = new Technology("environmental_suits", "Environmental Suits",
-                "Colonists can work in harsh environments", TechBranch.ADAPTATION, 1, 100, 1180);
-        environmentalSuits.addResourceCost(ResourceType.RESEARCH, 130);
-        environmentalSuits.addResourceCost(ResourceType.MATERIALS, 60);
-        environmentalSuits.addResourceCost(ResourceType.ENERGY, 30);
-        tree.addTechnology(environmentalSuits);
+        Technology efficientInfrastructure = new Technology("efficient_infrastructure", "Efficient Infrastructure",
+                "-10% energy consumption", TechBranch.ADAPTATION, 1, 100, 1180);
+        efficientInfrastructure.addResourceCost(ResourceType.RESEARCH, 130);
+        efficientInfrastructure.addResourceCost(ResourceType.MATERIALS, 60);
+        efficientInfrastructure.addResourceCost(ResourceType.ENERGY, 30);
+        efficientInfrastructure.addEffect(new ConsumptionModifierEffect(ResourceType.ENERGY, 0.9, null));
+        tree.addTechnology(efficientInfrastructure);
 
-        Technology climateMonitoring = new Technology("climate_monitoring", "Climate Monitoring",
-                "Weather events cause 50% less damage", TechBranch.ADAPTATION, 1, 100, 1300);
-        climateMonitoring.addResourceCost(ResourceType.RESEARCH, 120);
-        climateMonitoring.addResourceCost(ResourceType.MATERIALS, 50);
-        tree.addTechnology(climateMonitoring);
+        Technology resourceConservation = new Technology("resource_conservation", "Resource Conservation",
+                "-10% resource consumption", TechBranch.ADAPTATION, 1, 100, 1300);
+        resourceConservation.addResourceCost(ResourceType.RESEARCH, 120);
+        resourceConservation.addResourceCost(ResourceType.MATERIALS, 50);
+        resourceConservation.addEffect(new ConsumptionModifierEffect(ResourceType.FOOD, 0.9, null));
+        resourceConservation.addEffect(new ConsumptionModifierEffect(ResourceType.WATER, 0.9, null));
+        tree.addTechnology(resourceConservation);
 
         Technology adaptedAgriculture = new Technology("adapted_agriculture", "Adapted Agriculture",
-                "Farms can operate in desert/tundra tiles", TechBranch.ADAPTATION, 1, 100, 1420);
+                "Farms produce +25% more food", TechBranch.ADAPTATION, 1, 100, 1420);
         adaptedAgriculture.addResourceCost(ResourceType.RESEARCH, 150);
         adaptedAgriculture.addResourceCost(ResourceType.MATERIALS, 80);
+        adaptedAgriculture.addEffect(new ProductionModifierEffect(ResourceType.FOOD, 1.25, BuildingType.PRODUCTION));
         tree.addTechnology(adaptedAgriculture);
 
         // Adaptation Branch - Tier 2
-        Technology radiationShielding = new Technology("radiation_shielding", "Radiation Shielding",
-                "Buildings immune to radiation events", TechBranch.ADAPTATION, 2, 300, 1180);
-        radiationShielding.addResourceCost(ResourceType.RESEARCH, 380);
-        radiationShielding.addResourceCost(ResourceType.MATERIALS, 200);
-        radiationShielding.addResourceCost(ResourceType.ENERGY, 100);
-        radiationShielding.addPrerequisite("environmental_suits");
-        tree.addTechnology(radiationShielding);
+        Technology advancedRecycling = new Technology("advanced_recycling", "Advanced Recycling",
+                "-25% material consumption", TechBranch.ADAPTATION, 2, 300, 1180);
+        advancedRecycling.addResourceCost(ResourceType.RESEARCH, 380);
+        advancedRecycling.addResourceCost(ResourceType.MATERIALS, 200);
+        advancedRecycling.addResourceCost(ResourceType.ENERGY, 100);
+        advancedRecycling.addPrerequisite("efficient_infrastructure");
+        advancedRecycling.addEffect(new ConsumptionModifierEffect(ResourceType.MATERIALS, 0.75, null));
+        tree.addTechnology(advancedRecycling);
 
-        Technology weatherControl = new Technology("weather_control", "Weather Control",
-                "Unlocks Weather Control Station", TechBranch.ADAPTATION, 2, 300, 1300);
-        weatherControl.addResourceCost(ResourceType.RESEARCH, 420);
-        weatherControl.addResourceCost(ResourceType.MATERIALS, 250);
-        weatherControl.addResourceCost(ResourceType.ENERGY, 150);
-        weatherControl.addPrerequisite("climate_monitoring");
-        tree.addTechnology(weatherControl);
+        Technology closedLoopSystems = new Technology("closed_loop_systems", "Closed Loop Systems",
+                "-20% all resource consumption", TechBranch.ADAPTATION, 2, 300, 1300);
+        closedLoopSystems.addResourceCost(ResourceType.RESEARCH, 420);
+        closedLoopSystems.addResourceCost(ResourceType.MATERIALS, 250);
+        closedLoopSystems.addResourceCost(ResourceType.ENERGY, 150);
+        closedLoopSystems.addPrerequisite("resource_conservation");
+        closedLoopSystems.addEffect(new ConsumptionModifierEffect(ResourceType.FOOD, 0.8, null));
+        closedLoopSystems.addEffect(new ConsumptionModifierEffect(ResourceType.WATER, 0.8, null));
+        closedLoopSystems.addEffect(new ConsumptionModifierEffect(ResourceType.ENERGY, 0.8, null));
+        tree.addTechnology(closedLoopSystems);
 
         Technology geneticEngineering = new Technology("genetic_engineering", "Genetic Engineering",
-                "+25% population adaptation to environment", TechBranch.ADAPTATION, 2, 300, 1420);
+                "+25% population growth", TechBranch.ADAPTATION, 2, 300, 1420);
         geneticEngineering.addResourceCost(ResourceType.RESEARCH, 450);
         geneticEngineering.addResourceCost(ResourceType.MATERIALS, 200);
         geneticEngineering.addResourceCost(ResourceType.ENERGY, 100);
         geneticEngineering.addResourceCost(ResourceType.ALIEN_COMPOUNDS, 50);
         geneticEngineering.addPrerequisite("adapted_agriculture");
+        geneticEngineering.addEffect(new PopulationGrowthModifierEffect(1.25));
         tree.addTechnology(geneticEngineering);
 
         // Adaptation Branch - Tier 3
-        Technology domeTechnology = new Technology("dome_technology", "Dome Technology",
-                "Unlocks Biodome (creates artificial habitable zones)", TechBranch.ADAPTATION, 3, 500, 1240);
-        domeTechnology.addResourceCost(ResourceType.RESEARCH, 800);
-        domeTechnology.addResourceCost(ResourceType.MATERIALS, 400);
-        domeTechnology.addResourceCost(ResourceType.ENERGY, 200);
-        domeTechnology.addPrerequisite("radiation_shielding");
-        domeTechnology.addPrerequisite("weather_control");
-        tree.addTechnology(domeTechnology);
+        Technology advancedBiodomes = new Technology("advanced_biodomes", "Advanced Biodomes",
+                "Unlocks Biodome (efficient habitation)", TechBranch.ADAPTATION, 3, 500, 1240);
+        advancedBiodomes.addResourceCost(ResourceType.RESEARCH, 800);
+        advancedBiodomes.addResourceCost(ResourceType.MATERIALS, 400);
+        advancedBiodomes.addResourceCost(ResourceType.ENERGY, 200);
+        advancedBiodomes.addPrerequisite("advanced_recycling");
+        advancedBiodomes.addPrerequisite("closed_loop_systems");
+        advancedBiodomes.addEffect(new BuildingUnlockEffect("biodome", "Biodome", BuildingType.HABITATION));
+        tree.addTechnology(advancedBiodomes);
 
-        Technology nativeSpecies = new Technology("native_species", "Native Species Integration",
-                "Can harvest unique resources from alien flora/fauna", TechBranch.ADAPTATION, 3, 500, 1360);
-        nativeSpecies.addResourceCost(ResourceType.RESEARCH, 900);
-        nativeSpecies.addResourceCost(ResourceType.MATERIALS, 300);
-        nativeSpecies.addResourceCost(ResourceType.ENERGY, 150);
-        nativeSpecies.addResourceCost(ResourceType.ALIEN_COMPOUNDS, 100);
-        nativeSpecies.addPrerequisite("genetic_engineering");
-        tree.addTechnology(nativeSpecies);
+        Technology symbioticSystems = new Technology("symbiotic_systems", "Symbiotic Systems",
+                "Buildings produce more with less", TechBranch.ADAPTATION, 3, 500, 1360);
+        symbioticSystems.addResourceCost(ResourceType.RESEARCH, 900);
+        symbioticSystems.addResourceCost(ResourceType.MATERIALS, 300);
+        symbioticSystems.addResourceCost(ResourceType.ENERGY, 150);
+        symbioticSystems.addResourceCost(ResourceType.ALIEN_COMPOUNDS, 100);
+        symbioticSystems.addPrerequisite("genetic_engineering");
+        symbioticSystems.addEffect(new ProductionModifierEffect(ResourceType.FOOD, 1.3, null));
+        symbioticSystems.addEffect(new ConsumptionModifierEffect(ResourceType.ENERGY, 0.7, null));
+        tree.addTechnology(symbioticSystems);
 
         // Adaptation Branch - Tier 4
         Technology planetaryHarmony = new Technology("planetary_harmony", "Planetary Harmony",
-                "Complete environmental control, unlocks victory condition", TechBranch.ADAPTATION, 4, 700, 1300);
+                "Perfect balance with environment, unlocks victory condition", TechBranch.ADAPTATION, 4, 700, 1300);
         planetaryHarmony.addResourceCost(ResourceType.RESEARCH, 2200);
         planetaryHarmony.addResourceCost(ResourceType.MATERIALS, 800);
         planetaryHarmony.addResourceCost(ResourceType.ENERGY, 400);
         planetaryHarmony.addResourceCost(ResourceType.ALIEN_COMPOUNDS, 200);
-        planetaryHarmony.addPrerequisite("dome_technology");
-        planetaryHarmony.addPrerequisite("native_species");
+        planetaryHarmony.addPrerequisite("advanced_biodomes");
+        planetaryHarmony.addPrerequisite("symbiotic_systems");
+        planetaryHarmony.addEffect(new VictoryConditionEffect("Harmony Victory"));
         tree.addTechnology(planetaryHarmony);
 
         // Cross-Branch Technologies
@@ -318,6 +366,8 @@ public class ResearchTreeInitializer {
         advancedEnergySystems.addResourceCost(ResourceType.ENERGY, 150);
         advancedEnergySystems.addPrerequisite("energy_grid");
         advancedEnergySystems.addPrerequisite("research_methodology");
+        advancedEnergySystems.addEffect(new ProductionModifierEffect(ResourceType.ENERGY, 1.3, null));
+        advancedEnergySystems.addEffect(new ConsumptionModifierEffect(ResourceType.ENERGY, 0.8, null));
         tree.addTechnology(advancedEnergySystems);
 
         Technology biotechIntegration = new Technology("biotech_integration", "Biotech Integration",
@@ -327,6 +377,7 @@ public class ResearchTreeInitializer {
         biotechIntegration.addResourceCost(ResourceType.ALIEN_COMPOUNDS, 75);
         biotechIntegration.addPrerequisite("genetic_engineering");
         biotechIntegration.addPrerequisite("colony_health");
+        biotechIntegration.addEffect(new PopulationGrowthModifierEffect(1.3));
         tree.addTechnology(biotechIntegration);
 
         Technology integratedEcosystem = new Technology("integrated_ecosystem", "Integrated Ecosystem",
@@ -335,7 +386,9 @@ public class ResearchTreeInitializer {
         integratedEcosystem.addResourceCost(ResourceType.MATERIALS, 500);
         integratedEcosystem.addResourceCost(ResourceType.ENERGY, 250);
         integratedEcosystem.addPrerequisite("vertical_farming");
-        integratedEcosystem.addPrerequisite("dome_technology");
+        integratedEcosystem.addPrerequisite("advanced_biodomes");
+        integratedEcosystem.addEffect(new ConsumptionModifierEffect(ResourceType.FOOD, 0.5, null));
+        integratedEcosystem.addEffect(new ConsumptionModifierEffect(ResourceType.WATER, 0.5, null));
         tree.addTechnology(integratedEcosystem);
 
         Technology alienTechMastery = new Technology("alien_tech_mastery", "Alien Technology Mastery",
@@ -344,7 +397,9 @@ public class ResearchTreeInitializer {
         alienTechMastery.addResourceCost(ResourceType.MATERIALS, 600);
         alienTechMastery.addResourceCost(ResourceType.ALIEN_COMPOUNDS, 300);
         alienTechMastery.addPrerequisite("alien_xenobiology");
-        alienTechMastery.addPrerequisite("native_species");
+        alienTechMastery.addPrerequisite("symbiotic_systems");
+        alienTechMastery.addEffect(new BuildingUnlockEffect("alien_megastructure", "Alien Megastructure", BuildingType.SPECIAL));
+        alienTechMastery.addEffect(new ProductionModifierEffect(ResourceType.ALIEN_COMPOUNDS, 2.0, null));
         tree.addTechnology(alienTechMastery);
     }
 }

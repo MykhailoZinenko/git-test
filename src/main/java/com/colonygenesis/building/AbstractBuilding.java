@@ -1,5 +1,6 @@
 package com.colonygenesis.building;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceManager;
 import com.colonygenesis.resource.ResourceType;
@@ -31,12 +32,14 @@ public abstract class AbstractBuilding implements Serializable {
     protected int remainingConstructionTime;
     protected boolean active;
     protected int workersRequired;
+    protected int baseWorkersRequired;
     protected int workersAssigned;
     protected BuildingType buildingType;
 
     protected transient ResourceManager resourceManager;
 
     private final transient EventBus eventBus;
+    protected final Game game;
 
     /**
      * Constructs a new building.
@@ -50,13 +53,14 @@ public abstract class AbstractBuilding implements Serializable {
      */
     public AbstractBuilding(String name, String description, Tile location,
                             int constructionTime, int workersRequired,
-                            BuildingType buildingType) {
+                            BuildingType buildingType, Game game) {
         this.name = name;
         this.description = description;
         this.location = location;
         this.constructionTime = constructionTime;
         this.remainingConstructionTime = constructionTime;
         this.workersRequired = workersRequired;
+        this.baseWorkersRequired = workersRequired;
         this.workersAssigned = 0;
         this.buildingType = buildingType;
         this.active = false;
@@ -65,6 +69,8 @@ public abstract class AbstractBuilding implements Serializable {
         this.maintenanceCost = new EnumMap<>(ResourceType.class);
 
         this.eventBus = EventBus.getInstance();
+
+        this.game = game;
 
         LOGGER.fine("Created building: " + name + " at " + location);
     }
@@ -151,7 +157,7 @@ public abstract class AbstractBuilding implements Serializable {
      */
     public boolean activate() {
         if (isComplete()) {
-            if (workersRequired == 0 || workersAssigned > 0) {
+            if (workersRequired == 0 || workersAssigned > 0 || calculateEfficiency() > 0) {
                 active = true;
                 int efficiency = calculateEfficiency();
 
@@ -260,7 +266,18 @@ public abstract class AbstractBuilding implements Serializable {
      * @return The efficiency percentage (0-100)
      */
     public int calculateEfficiency() {
-        if (workersRequired == 0) return 100; // No workers needed = 100% efficiency
+        if (workersRequired == 0) return 100;
+
+        // Check if tech provides base efficiency without workers
+        double baseEfficiency = 0.0;
+        if (game != null && game.getTechManager() != null) {
+            baseEfficiency = game.getTechManager().getBaseEfficiency();
+        }
+
+        if (workersAssigned == 0 && baseEfficiency > 0) {
+            return (int) (baseEfficiency * 100);
+        }
+
         return Math.min(100, (workersAssigned * 100) / workersRequired);
     }
 
@@ -318,10 +335,39 @@ public abstract class AbstractBuilding implements Serializable {
         return (int)(((double)(constructionTime - remainingConstructionTime) / constructionTime) * 100);
     }
 
+    public void applyTechModifiers() {
+        if (game == null || game.getTechManager() == null) return;
+
+        // Apply worker reduction
+        int reduction = game.getTechManager().getWorkerReduction(buildingType);
+        this.workersRequired = Math.max(0, baseWorkersRequired - reduction);
+
+        // Apply construction time modifier
+        double timeModifier = game.getTechManager().getConstructionTimeModifier(buildingType);
+        this.constructionTime = (int) Math.ceil(constructionTime * timeModifier);
+
+        // Apply construction cost modifier
+        double costModifier = game.getTechManager().getConstructionCostModifier(buildingType);
+        for (ResourceType type : constructionCost.keySet()) {
+            int baseCost = constructionCost.get(type);
+            int modifiedCost = (int) Math.ceil(baseCost * costModifier);
+            constructionCost.put(type, modifiedCost);
+        }
+    }
+
+    // New getter for base workers required
+    public int getBaseWorkersRequired() {
+        return baseWorkersRequired;
+    }
+
     @Override
     public String toString() {
         return name + " at " + location + " (" + (isComplete() ? "Complete" :
                 getConstructionProgress() + "% built") + ", " +
                 (active ? "Active" : "Inactive") + ")";
     }
+
+    protected abstract int calculateProduction();
+
+    protected abstract void calculateResourceConsumption(Map<ResourceType, Integer> output);
 }

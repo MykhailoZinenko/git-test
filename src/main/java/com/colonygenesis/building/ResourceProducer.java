@@ -1,5 +1,6 @@
 package com.colonygenesis.building;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.map.TerrainType;
 import com.colonygenesis.resource.ResourceType;
@@ -23,7 +24,7 @@ public class ResourceProducer extends ProductionBuilding {
      * @param producerType The type of resource producer
      * @param location The tile where the building is located
      */
-    public ResourceProducer(ResourceProducerType producerType, Tile location) {
+    public ResourceProducer(ResourceProducerType producerType, Tile location, Game game) {
         super(
                 producerType.getName(),
                 producerType.getDescription(),
@@ -31,7 +32,8 @@ public class ResourceProducer extends ProductionBuilding {
                 producerType.getConstructionTime(),
                 producerType.getWorkersRequired(),
                 producerType.getOutputType(),
-                producerType.getBaseOutput()
+                producerType.getBaseOutput(),
+                game
         );
 
         this.producerType = producerType;
@@ -79,6 +81,11 @@ public class ResourceProducer extends ProductionBuilding {
         }
 
         return output;
+    }
+
+    @Override
+    protected void calculateResourceConsumption(Map<ResourceType, Integer> output) {
+
     }
 
     /**

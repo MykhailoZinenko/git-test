@@ -1,5 +1,6 @@
 package com.colonygenesis.building;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceType;
 
@@ -33,8 +34,8 @@ public abstract class ProductionBuilding extends AbstractBuilding {
      */
     public ProductionBuilding(String name, String description, Tile location,
                               int constructionTime, int workersRequired,
-                              ResourceType primaryOutputType, int baseOutputAmount) {
-        super(name, description, location, constructionTime, workersRequired, BuildingType.PRODUCTION);
+                              ResourceType primaryOutputType, int baseOutputAmount, Game game) {
+        super(name, description, location, constructionTime, workersRequired, BuildingType.PRODUCTION, game);
 
         this.primaryOutputType = primaryOutputType;
         this.baseOutputAmount = baseOutputAmount;
@@ -53,18 +54,28 @@ public abstract class ProductionBuilding extends AbstractBuilding {
      *
      * @return The total amount of resources produced
      */
+    @Override
     protected int calculateProduction() {
         if (!isActive()) {
             return 0;
         }
 
         float totalModifier = 1.0f;
+
+        // Apply building-specific modifiers
         for (float modifier : productionModifiers.values()) {
             totalModifier *= modifier;
         }
 
-        float workerEfficiency = (float) workersAssigned / workersRequired;
-        if (workerEfficiency > 1.0f) workerEfficiency = 1.0f;
+        // Apply tech modifiers
+        if (game != null && game.getTechManager() != null) {
+            double techModifier = game.getTechManager().getProductionModifier(primaryOutputType, buildingType);
+            totalModifier *= techModifier;
+        }
+
+        System.out.println(baseOutputAmount + " " + totalModifier);
+
+        float workerEfficiency = calculateEfficiency() / 100.0f;
 
         return Math.round(baseOutputAmount * totalModifier * workerEfficiency);
     }

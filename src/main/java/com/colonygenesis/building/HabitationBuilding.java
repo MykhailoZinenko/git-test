@@ -1,5 +1,6 @@
 package com.colonygenesis.building;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceType;
 import com.colonygenesis.ui.events.ColonyEvents;
@@ -36,8 +37,8 @@ public abstract class HabitationBuilding extends AbstractBuilding {
      */
     public HabitationBuilding(String name, String description, Tile location,
                               int constructionTime, int workersRequired,
-                              int capacity, float comfortLevel, int populationGrowthRate) {
-        super(name, description, location, constructionTime, workersRequired, BuildingType.HABITATION);
+                              int capacity, float comfortLevel, int populationGrowthRate, Game game) {
+        super(name, description, location, constructionTime, workersRequired, BuildingType.HABITATION, game);
 
         this.capacity = capacity;
         this.occupied = 0;
@@ -60,7 +61,43 @@ public abstract class HabitationBuilding extends AbstractBuilding {
      *
      * @param output Map to store resource consumption
      */
-    protected abstract void calculateResourceConsumption(Map<ResourceType, Integer> output);
+    @Override
+    protected void calculateResourceConsumption(Map<ResourceType, Integer> output) {
+        if (!isActive() || occupied == 0) {
+            return;
+        }
+
+        // Get consumption values from building
+        int baseFood = calculateBaseResourceConsumption(ResourceType.FOOD);
+        int baseWater = calculateBaseResourceConsumption(ResourceType.WATER);
+        int baseEnergy = calculateBaseResourceConsumption(ResourceType.ENERGY);
+
+        // Apply tech modifiers
+        if (game != null && game.getTechManager() != null) {
+            double foodModifier = game.getTechManager().getConsumptionModifier(ResourceType.FOOD, buildingType);
+            double waterModifier = game.getTechManager().getConsumptionModifier(ResourceType.WATER, buildingType);
+            double energyModifier = game.getTechManager().getConsumptionModifier(ResourceType.ENERGY, buildingType);
+
+            baseFood = (int) Math.ceil(baseFood * foodModifier);
+            baseWater = (int) Math.ceil(baseWater * waterModifier);
+            baseEnergy = (int) Math.ceil(baseEnergy * energyModifier);
+        }
+
+        output.put(ResourceType.FOOD, -baseFood);
+        output.put(ResourceType.WATER, -baseWater);
+        output.put(ResourceType.ENERGY, -baseEnergy);
+    }
+
+    // Add method to calculate base consumption before modifiers
+    protected abstract int calculateBaseResourceConsumption(ResourceType type);
+
+    // Add method to get modified growth rate
+    public int getModifiedPopulationGrowthRate() {
+        if (game != null && game.getTechManager() != null) {
+            return (int) Math.ceil(populationGrowthRate * game.getTechManager().getPopulationGrowthModifier());
+        }
+        return populationGrowthRate;
+    }
 
     /**
      * Gets the population capacity of this building.

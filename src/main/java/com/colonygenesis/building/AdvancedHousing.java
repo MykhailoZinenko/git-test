@@ -1,5 +1,6 @@
 package com.colonygenesis.building;
 
+import com.colonygenesis.core.Game;
 import com.colonygenesis.map.Tile;
 import com.colonygenesis.resource.ResourceType;
 
@@ -26,7 +27,7 @@ public class AdvancedHousing extends HabitationBuilding {
      * @param housingType The type of advanced housing
      * @param location The tile where the building is located
      */
-    public AdvancedHousing(HousingType housingType, Tile location) {
+    public AdvancedHousing(HousingType housingType, Tile location, Game game) {
         super(
                 housingType.getName(),
                 housingType.getDescription(),
@@ -35,7 +36,8 @@ public class AdvancedHousing extends HabitationBuilding {
                 housingType.getWorkersRequired(),
                 housingType.getCapacity(),
                 housingType.getComfortLevel(),
-                housingType.getGrowthRate()
+                housingType.getGrowthRate(),
+                game
         );
 
         this.housingType = housingType;
@@ -62,23 +64,25 @@ public class AdvancedHousing extends HabitationBuilding {
     }
 
     @Override
-    protected void calculateResourceConsumption(Map<ResourceType, Integer> output) {
-        if (!isActive() || occupied == 0) {
-            return;
+    protected int calculateBaseResourceConsumption(ResourceType type) {
+        int base = 0;
+        switch (type) {
+            case FOOD:
+                base = (int) Math.ceil(occupied * housingType.getFoodPerColonist());
+                break;
+            case WATER:
+                base = (int) Math.ceil(occupied * housingType.getWaterPerColonist());
+                break;
+            case ENERGY:
+                base = housingType.getBaseEnergyCost() +
+                        (int) Math.ceil(occupied * housingType.getEnergyPerColonist());
+                // Add energy cost for amenities
+                for (Amenity amenity : amenities) {
+                    base += amenity.getEnergyCost();
+                }
+                break;
         }
-
-        int foodConsumption = (int) Math.ceil(occupied * housingType.getFoodPerColonist());
-        int waterConsumption = (int) Math.ceil(occupied * housingType.getWaterPerColonist());
-        int energyConsumption = housingType.getBaseEnergyCost() +
-                (int) Math.ceil(occupied * housingType.getEnergyPerColonist());
-
-        for (Amenity amenity : amenities) {
-            energyConsumption += amenity.getEnergyCost();
-        }
-
-        output.put(ResourceType.FOOD, -foodConsumption);
-        output.put(ResourceType.WATER, -waterConsumption);
-        output.put(ResourceType.ENERGY, -energyConsumption);
+        return base;
     }
 
     @Override
@@ -92,6 +96,11 @@ public class AdvancedHousing extends HabitationBuilding {
         }
 
         return output;
+    }
+
+    @Override
+    protected int calculateProduction() {
+        return 0;
     }
 
     /**

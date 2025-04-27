@@ -1,0 +1,17 @@
+package com.colonygenesis.technology;
+
+/**
+ * Types of technology effects.
+ */
+public enum TechEffectType {
+    BUILDING_UNLOCK,
+    PRODUCTION_MODIFIER,
+    CONSUMPTION_MODIFIER,
+    WORKER_MODIFIER,
+    POPULATION_GROWTH_MODIFIER,
+    CONSTRUCTION_COST_MODIFIER,
+    CONSTRUCTION_TIME_MODIFIER,
+    EFFICIENCY_MODIFIER,
+    VICTORY_CONDITION,
+    SPECIAL
+}
