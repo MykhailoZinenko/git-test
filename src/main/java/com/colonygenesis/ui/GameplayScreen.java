@@ -318,7 +318,13 @@ public class GameplayScreen extends BorderPane implements IScreenController {
                         result.getErrorMessage()
                 ));
             }
+        }, () -> {
+            ResearchOverlay overlay = new ResearchOverlay(game);
+            StackPane rootPane = ScreenManager.getInstance().getRootPane();
+            rootPane.getChildren().add(overlay);
+            overlay.show();
         });
+
         setBottom(gameControlBar);
 
         Platform.runLater(() -> mapView.resetView());

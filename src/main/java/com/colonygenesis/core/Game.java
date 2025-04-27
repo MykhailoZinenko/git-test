@@ -4,6 +4,7 @@ import com.colonygenesis.building.BuildingManager;
 import com.colonygenesis.map.Planet;
 import com.colonygenesis.map.PlanetType;
 import com.colonygenesis.resource.ResourceManager;
+import com.colonygenesis.technology.TechManager;
 import com.colonygenesis.ui.events.EventBus;
 import com.colonygenesis.ui.events.TurnEvents;
 import com.colonygenesis.util.DialogUtil;
@@ -42,6 +43,7 @@ public class Game implements Serializable {
     private ResourceManager resourceManager;
     private TurnManager turnManager;
     private BuildingManager buildingManager;
+    private TechManager techManager;
     private Planet planet;
 
     /**
@@ -76,6 +78,7 @@ public class Game implements Serializable {
         this.turnManager = new TurnManager(this);
         this.buildingManager = new BuildingManager(this);
         this.planet = new Planet(this, colonyName + " Prime", planetType, mapSize);
+        this.techManager = new TechManager(this);  // Add this line
 
         this.initialized = true;
 
@@ -295,6 +298,14 @@ public class Game implements Serializable {
             buildingManager = new BuildingManager(this);
         }
 
+        // Add techManager reconnection
+        if (techManager != null) {
+            // No setGame needed since Game is final in TechManager
+        } else {
+            LOGGER.severe("TechManager is null after loading");
+            techManager = new TechManager(this);
+        }
+
         EventBus eventBus = EventBus.getInstance();
 
         resourceManager.publishCurrentState();
@@ -433,6 +444,15 @@ public class Game implements Serializable {
      */
     public BuildingManager getBuildingManager() {
         return buildingManager;
+    }
+
+    /**
+     * Gets the technology manager.
+     *
+     * @return The technology manager
+     */
+    public TechManager getTechManager() {
+        return techManager;
     }
 
     /**
